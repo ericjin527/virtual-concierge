@@ -99,7 +99,10 @@ export default function TherapistsPage() {
       {/* Therapist list with skill assignment */}
       {therapists.filter(t => t.active).map(t => (
         <div key={t.id} style={s.card}>
-          <div style={{ fontWeight: 600, marginBottom: 6 }}>{t.name}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <div style={{ fontWeight: 600 }}>{t.name}</div>
+            <a href={`/dashboard/businesses/${businessId}/therapists/${t.id}/shifts`} style={s.link}>Shifts →</a>
+          </div>
           <div style={{ color: '#6b7280', fontSize: '0.8rem', marginBottom: 10 }}>
             {t.languages.join(', ')} {t.gender ? `· ${t.gender}` : ''}
           </div>

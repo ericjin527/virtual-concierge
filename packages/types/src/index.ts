@@ -13,7 +13,7 @@ export const RecommendSlotsInputSchema = z.object({
       label: z.enum(['morning', 'afternoon', 'evening']).optional(),
     })
     .optional(),
-  partySize: z.number().int().positive().default(1),
+  partySize: z.number().int().positive().optional(),
   therapistPreference: z.string().optional(),
   languagePreference: z.string().optional(),
   genderPreference: z.string().optional(),

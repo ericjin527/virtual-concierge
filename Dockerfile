@@ -11,8 +11,9 @@ COPY . .
 # Install all deps
 RUN pnpm install --no-frozen-lockfile
 
-# Generate Prisma client
+# Generate Prisma client + build all workspace packages
 RUN cd packages/db && pnpm exec prisma generate
+RUN pnpm --filter='./packages/*' build
 
 # Build NestJS API
 RUN cd apps/api && pnpm exec nest build

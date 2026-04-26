@@ -14,22 +14,22 @@ export async function sendSms(to: string, body: string): Promise<string> {
   return msg.sid;
 }
 
-export function buildTwimlSay(text: string, voice = 'Polly.Joanna'): string {
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say voice="${voice}">${text}</Say>
-  <Gather input="speech" action="/twilio/voice/process-turn" method="POST" speechTimeout="auto" language="en-US">
-  </Gather>
-</Response>`;
+function xmlEscape(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
 
-export function buildTwimlGather(prompt: string, voice = 'Polly.Joanna'): string {
+export function buildTwimlGather(prompt: string, voice = 'Polly.Joanna', language = 'en-US'): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Gather input="speech" action="/twilio/voice/process-turn" method="POST" speechTimeout="auto" language="en-US">
-    <Say voice="${voice}">${prompt}</Say>
+  <Gather input="speech" action="/twilio/voice/process-turn" method="POST" speechTimeout="auto" language="${language}">
+    <Say voice="${voice}">${xmlEscape(prompt)}</Say>
   </Gather>
-  <Say voice="${voice}">I didn't catch that. Let me transfer you to our team.</Say>
+  <Say voice="${voice}">I didn't catch that. Let me transfer you to our team. Goodbye.</Say>
   <Hangup/>
 </Response>`;
 }
@@ -37,7 +37,7 @@ export function buildTwimlGather(prompt: string, voice = 'Polly.Joanna'): string
 export function buildTwimlHangup(farewell: string, voice = 'Polly.Joanna'): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="${voice}">${farewell}</Say>
+  <Say voice="${voice}">${xmlEscape(farewell)}</Say>
   <Hangup/>
 </Response>`;
 }

@@ -42,8 +42,11 @@ export default function BusinessesPage() {
               <div style={{ color: '#6b7280', fontSize: '0.85rem', marginTop: 4 }}>{b.publicPhone} · {b.primaryLanguage.toUpperCase()} · {b.tonePreset}</div>
             </div>
             <div style={s.row}>
+              <a href={`/dashboard/businesses/${b.id}/booking-requests`} style={{ ...s.link, fontWeight: 600 }}>Bookings</a>
               <a href={`/dashboard/businesses/${b.id}/services`} style={s.link}>Services</a>
               <a href={`/dashboard/businesses/${b.id}/therapists`} style={s.link}>Therapists</a>
+              <a href={`/dashboard/businesses/${b.id}/rooms`} style={s.link}>Rooms</a>
+              <a href={`/dashboard/businesses/${b.id}/policy`} style={s.link}>Policy</a>
               <a href={`/dashboard/businesses/${b.id}`} style={s.link}>Edit</a>
             </div>
           </div>

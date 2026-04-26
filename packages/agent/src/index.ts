@@ -14,6 +14,20 @@ export interface AgentContext {
   customerPhone?: string;
 }
 
+export interface BookingIntent {
+  customerName: string;
+  requestedDate: string;
+  preferredSlot?: string;
+  serviceId?: string;
+  notes?: string;
+}
+
+export interface ChatResult {
+  message: string;
+  bookingIntent?: BookingIntent;
+  handoff?: boolean;
+}
+
 export async function buildSystemPrompt(businessId: string): Promise<string> {
   const skillsFile = await prisma.skillsFile.findFirst({
     where: { businessId, status: 'published' },
@@ -41,19 +55,42 @@ CORE RULES:
 - Hand off to human for: complaints, refunds, medical questions, discounts, explicit human requests
 
 SERVICES (${business.services.length} active):
-${business.services.map((s) => `- ${s.name}: ${s.durationMinutes}min, $${s.price}${s.bestFor ? ` | Best for: ${s.bestFor}` : ''}`).join('\n')}
+${business.services.map((s) => `- ${s.name} (id:${s.id}): ${s.durationMinutes}min, $${s.price}${s.bestFor ? ` | Best for: ${s.bestFor}` : ''}`).join('\n')}
 
 ${skills?.handoffRules ? `HANDOFF RULES:\n${JSON.stringify(skills.handoffRules)}` : ''}
 ${skills?.doNotSayRules ? `DO NOT SAY:\n${JSON.stringify(skills.doNotSayRules)}` : ''}
 ${business.policies?.cancellationPolicy ? `CANCELLATION POLICY: ${business.policies.cancellationPolicy}` : ''}
 
-RECOMMENDATION STYLE: Acknowledge → Recommend → Explain briefly → Ask preference
-Example: "For shoulder tension, I'd recommend deep tissue if you like stronger pressure. Would you prefer stronger pressure or something more relaxing?"
+BOOKING FLOW:
+1. Understand what service the customer wants
+2. Ask for their name
+3. Ask for preferred date and time
+4. Call create_booking_request once you have: name + date (service and time are optional)
+5. Tell them the spa will confirm shortly — never guarantee a slot
 
-BOOKING RESPONSE: "I can request [time] for you. The spa will confirm shortly."`;
+RECOMMENDATION STYLE: Acknowledge → Recommend → Explain briefly → Ask preference`;
 }
 
-export async function chat(ctx: AgentContext, userMessage: string): Promise<string> {
+const BOOKING_TOOL: OpenAI.ChatCompletionTool = {
+  type: 'function',
+  function: {
+    name: 'create_booking_request',
+    description: 'Submit a booking request once you have the customer name and requested date. Call this as soon as you have the minimum required info — do not ask for more than needed.',
+    parameters: {
+      type: 'object',
+      properties: {
+        customerName: { type: 'string', description: "Customer's full name" },
+        requestedDate: { type: 'string', description: 'Date in YYYY-MM-DD format' },
+        preferredSlot: { type: 'string', description: 'Preferred time, e.g. "14:00" or "afternoon"' },
+        serviceId: { type: 'string', description: 'Service ID from the services list' },
+        notes: { type: 'string', description: 'Any special requests' },
+      },
+      required: ['customerName', 'requestedDate'],
+    },
+  },
+};
+
+export async function chatWithTools(ctx: AgentContext, userMessage: string): Promise<ChatResult> {
   const systemPrompt = await buildSystemPrompt(ctx.businessId);
 
   const messages: OpenAI.ChatCompletionMessageParam[] = [
@@ -65,11 +102,51 @@ export async function chat(ctx: AgentContext, userMessage: string): Promise<stri
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages,
-    max_tokens: ctx.channel === 'phone' ? 150 : 400,
+    tools: [BOOKING_TOOL],
+    tool_choice: 'auto',
+    max_tokens: ctx.channel === 'phone' ? 120 : 400,
     temperature: 0.4,
   });
 
-  return response.choices[0]?.message?.content ?? "I'm sorry, I couldn't process that. Let me connect you with our team.";
+  const choice = response.choices[0];
+
+  if (choice?.message.tool_calls?.[0]) {
+    const toolCall = choice.message.tool_calls[0];
+    const args = JSON.parse(toolCall.function.arguments) as BookingIntent;
+
+    // Get a natural confirmation message after the tool call
+    const followUp = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        ...messages,
+        choice.message,
+        { role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify({ success: true }) },
+      ],
+      max_tokens: 120,
+      temperature: 0.4,
+    });
+
+    return {
+      message: followUp.choices[0]?.message?.content ?? "I've sent your booking request. The spa will confirm shortly.",
+      bookingIntent: args,
+    };
+  }
+
+  const text = choice?.message?.content ?? "I'm sorry, I couldn't process that. Let me connect you with our team.";
+  const lowerText = text.toLowerCase();
+  const handoff =
+    lowerText.includes('transfer') ||
+    lowerText.includes('connect you with') ||
+    lowerText.includes('colleague') ||
+    lowerText.includes('call us back');
+
+  return { message: text, handoff };
+}
+
+// Simple text-only chat (used by web widget)
+export async function chat(ctx: AgentContext, userMessage: string): Promise<string> {
+  const result = await chatWithTools(ctx, userMessage);
+  return result.message;
 }
 
 export async function recommendSlotsForAgent(input: RecommendSlotsInput): Promise<CandidateSlot[]> {

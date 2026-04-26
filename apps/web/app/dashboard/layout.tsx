@@ -1,5 +1,7 @@
 import { UserButton } from '@clerk/nextjs';
 
+export const dynamic = 'force-dynamic';
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -12,7 +14,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <a href="/dashboard/businesses">Businesses</a>
           <a href="/dashboard/booking-requests">Bookings</a>
           <a href="/dashboard/usage">Usage</a>
-          <UserButton afterSignOutUrl="/sign-in" />
+          <UserButton />
         </nav>
       </header>
       <main style={{ flex: 1, padding: '2rem' }}>{children}</main>

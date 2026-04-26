@@ -41,4 +41,32 @@ export const api = {
     }),
   removeSkill: (businessId: string, therapistId: string, serviceId: string) =>
     apiFetch(`/businesses/${businessId}/therapists/${therapistId}/skills/${serviceId}`, { method: 'DELETE' }),
+
+  // Shifts
+  getShifts: (businessId: string, therapistId: string) =>
+    apiFetch(`/businesses/${businessId}/therapists/${therapistId}/shifts`),
+  createShift: (businessId: string, therapistId: string, data: unknown) =>
+    apiFetch(`/businesses/${businessId}/therapists/${therapistId}/shifts`, { method: 'POST', body: JSON.stringify(data) }),
+  deleteShift: (businessId: string, therapistId: string, shiftId: string) =>
+    apiFetch(`/businesses/${businessId}/therapists/${therapistId}/shifts/${shiftId}`, { method: 'DELETE' }),
+
+  // Rooms
+  getRooms: (businessId: string) => apiFetch(`/businesses/${businessId}/rooms`),
+  createRoom: (businessId: string, data: unknown) =>
+    apiFetch(`/businesses/${businessId}/rooms`, { method: 'POST', body: JSON.stringify(data) }),
+  updateRoom: (businessId: string, id: string, data: unknown) =>
+    apiFetch(`/businesses/${businessId}/rooms/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteRoom: (businessId: string, id: string) =>
+    apiFetch(`/businesses/${businessId}/rooms/${id}`, { method: 'DELETE' }),
+
+  // Policy
+  getPolicy: (businessId: string) => apiFetch(`/businesses/${businessId}/policy`),
+  upsertPolicy: (businessId: string, data: unknown) =>
+    apiFetch(`/businesses/${businessId}/policy`, { method: 'POST', body: JSON.stringify(data) }),
+
+  // Booking Requests
+  getBookingRequests: (businessId: string, status?: string) =>
+    apiFetch(`/businesses/${businessId}/booking-requests${status ? `?status=${status}` : ''}`),
+  updateBookingRequest: (businessId: string, id: string, data: unknown) =>
+    apiFetch(`/businesses/${businessId}/booking-requests/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
 };

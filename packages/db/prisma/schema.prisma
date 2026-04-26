@@ -79,8 +79,10 @@ model Business {
   timezone          String    @default("America/Los_Angeles")
   primaryLanguage   String    @default("en")
   secondaryLanguage String?
-  tonePreset        TonePreset @default(warm)
-  active            Boolean   @default(true)
+  tonePreset           TonePreset @default(warm)
+  bookingSystem        String     @default("internal")
+  bookingSystemConfig  Json?
+  active               Boolean    @default(true)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -126,9 +128,10 @@ model Therapist {
   id         String   @id @default(cuid())
   businessId String
   name       String
-  active     Boolean  @default(true)
-  languages  String[] @default(["en"])
-  gender     String?
+  active            Boolean  @default(true)
+  languages         String[] @default(["en"])
+  gender            String?
+  googleCalendarId  String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

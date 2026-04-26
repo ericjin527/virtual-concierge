@@ -12,6 +12,8 @@ const geistMono = localFont({
   variable: '--font-geist-mono',
 });
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Virtual Concierge — Admin',
   description: 'Bilingual AI Spa Front Desk Admin Dashboard',
@@ -19,10 +21,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider>
-      <html lang="en">
-        <body className={`${geistSans.variable} ${geistMono.variable}`}>{children}</body>
-      </html>
-    </ClerkProvider>
+    <html lang="en">
+      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+        <ClerkProvider>{children}</ClerkProvider>
+      </body>
+    </html>
   );
 }

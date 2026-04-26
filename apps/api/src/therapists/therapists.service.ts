@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@repo/db';
 import { CreateTherapistDto } from './dto/create-therapist.dto';
 import { UpdateTherapistDto } from './dto/update-therapist.dto';
+import { CreateShiftDto } from './dto/create-shift.dto';
 
 @Injectable()
 export class TherapistsService {
@@ -49,5 +50,28 @@ export class TherapistsService {
     return prisma.therapistSkill.delete({
       where: { therapistId_serviceId: { therapistId, serviceId } },
     });
+  }
+
+  async createShift(therapistId: string, dto: CreateShiftDto) {
+    return prisma.therapistShift.create({
+      data: {
+        therapistId,
+        dayOfWeek: dto.dayOfWeek ?? null,
+        date: dto.date ? new Date(dto.date) : null,
+        startTime: dto.startTime,
+        endTime: dto.endTime,
+      },
+    });
+  }
+
+  async findShifts(therapistId: string) {
+    return prisma.therapistShift.findMany({
+      where: { therapistId },
+      orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
+    });
+  }
+
+  async removeShift(shiftId: string) {
+    return prisma.therapistShift.delete({ where: { id: shiftId } });
   }
 }

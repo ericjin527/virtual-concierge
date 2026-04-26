@@ -4,6 +4,7 @@ import { TherapistsService } from './therapists.service';
 import { CreateTherapistDto } from './dto/create-therapist.dto';
 import { UpdateTherapistDto } from './dto/update-therapist.dto';
 import { AssignSkillDto } from './dto/assign-skill.dto';
+import { CreateShiftDto } from './dto/create-shift.dto';
 
 @ApiTags('therapists')
 @Controller('businesses/:businessId/therapists')
@@ -33,5 +34,20 @@ export class TherapistsController {
   @Delete(':id/skills/:serviceId')
   removeSkill(@Param('id') id: string, @Param('serviceId') serviceId: string) {
     return this.therapistsService.removeSkill(id, serviceId);
+  }
+
+  @Post(':id/shifts')
+  createShift(@Param('id') id: string, @Body() dto: CreateShiftDto) {
+    return this.therapistsService.createShift(id, dto);
+  }
+
+  @Get(':id/shifts')
+  findShifts(@Param('id') id: string) {
+    return this.therapistsService.findShifts(id);
+  }
+
+  @Delete(':id/shifts/:shiftId')
+  removeShift(@Param('shiftId') shiftId: string) {
+    return this.therapistsService.removeShift(shiftId);
   }
 }
