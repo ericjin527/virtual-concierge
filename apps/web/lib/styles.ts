@@ -1,0 +1,18 @@
+export const s = {
+  page: { maxWidth: 900, margin: '0 auto' } as React.CSSProperties,
+  h1: { fontSize: '1.4rem', fontWeight: 700, marginBottom: '1.5rem' } as React.CSSProperties,
+  h2: { fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem' } as React.CSSProperties,
+  card: { border: '1px solid #e5e7eb', borderRadius: 8, padding: '1.25rem', marginBottom: '0.75rem', background: '#fff' } as React.CSSProperties,
+  row: { display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' as const } as React.CSSProperties,
+  label: { display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: 4, color: '#374151' } as React.CSSProperties,
+  input: { width: '100%', padding: '0.45rem 0.65rem', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.9rem', boxSizing: 'border-box' as const } as React.CSSProperties,
+  select: { padding: '0.45rem 0.65rem', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.9rem' } as React.CSSProperties,
+  btnPrimary: { padding: '0.5rem 1.1rem', background: '#111', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.9rem' } as React.CSSProperties,
+  btnSecondary: { padding: '0.5rem 1.1rem', background: '#f3f4f6', color: '#111', border: '1px solid #d1d5db', borderRadius: 6, cursor: 'pointer', fontSize: '0.9rem' } as React.CSSProperties,
+  btnDanger: { padding: '0.4rem 0.8rem', background: '#fee2e2', color: '#b91c1c', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.8rem' } as React.CSSProperties,
+  grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' } as React.CSSProperties,
+  formGroup: { marginBottom: '1rem' } as React.CSSProperties,
+  badge: (color: string) => ({ display: 'inline-block', padding: '2px 8px', borderRadius: 99, fontSize: '0.75rem', background: color, marginRight: 4 }) as React.CSSProperties,
+  link: { color: '#2563eb', textDecoration: 'none', fontSize: '0.9rem' } as React.CSSProperties,
+  backLink: { display: 'inline-block', marginBottom: '1rem', color: '#6b7280', fontSize: '0.85rem', textDecoration: 'none' } as React.CSSProperties,
+};
