@@ -1,0 +1,371 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum TonePreset {
+  warm
+  premium
+  efficient
+  bilingual
+}
+
+enum BookingRequestStatus {
+  pending_owner_confirmation
+  confirmed
+  declined
+  needs_callback
+  cancelled
+}
+
+enum BookingSource {
+  phone
+  web
+  sms
+  admin
+}
+
+enum SkillsFileStatus {
+  draft
+  published
+  archived
+}
+
+enum CallOutcome {
+  booking_request_created
+  faq_answered
+  human_handoff
+  callback_created
+  abandoned
+  spam
+  error
+}
+
+enum UsageEventType {
+  inbound_voice_minute
+  realtime_ai_second
+  transcription_minute
+  text_model_input_token
+  text_model_output_token
+  sms_segment_sent
+  sms_segment_received
+  booking_request_created
+  human_handoff
+}
+
+enum NotificationStatus {
+  pending
+  sent
+  failed
+}
+
+// ─── Business & Location ─────────────────────────────────────────────────────
+
+model Business {
+  id                String    @id @default(cuid())
+  clerkOwnerId      String
+  name              String
+  publicPhone       String
+  ownerPhone        String
+  address           String?
+  timezone          String    @default("America/Los_Angeles")
+  primaryLanguage   String    @default("en")
+  secondaryLanguage String?
+  tonePreset        TonePreset @default(warm)
+  active            Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  services        Service[]
+  therapists      Therapist[]
+  rooms           Room[]
+  policies        Policy?
+  skillsFiles     SkillsFile[]
+  bookingRequests BookingRequest[]
+  callSessions    CallSession[]
+  usageEvents     UsageEvent[]
+  customers       Customer[]
+
+  @@index([clerkOwnerId])
+}
+
+// ─── Services ────────────────────────────────────────────────────────────────
+
+model Service {
+  id              String   @id @default(cuid())
+  businessId      String
+  name            String
+  category        String
+  durationMinutes Int
+  price           Float
+  description     String?
+  bestFor         String?
+  notBestFor      String?
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  business        Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  therapistSkills TherapistSkill[]
+  bookingRequests BookingRequest[]
+
+  @@index([businessId])
+}
+
+// ─── Therapists ───────────────────────────────────────────────────────────────
+
+model Therapist {
+  id         String   @id @default(cuid())
+  businessId String
+  name       String
+  active     Boolean  @default(true)
+  languages  String[] @default(["en"])
+  gender     String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  business     Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  skills       TherapistSkill[]
+  shifts       TherapistShift[]
+  appointments Appointment[]
+
+  @@index([businessId])
+}
+
+model TherapistSkill {
+  id           String    @id @default(cuid())
+  therapistId  String
+  serviceId    String
+  createdAt    DateTime  @default(now())
+
+  therapist Therapist @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  service   Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([therapistId, serviceId])
+}
+
+model TherapistShift {
+  id          String   @id @default(cuid())
+  therapistId String
+  dayOfWeek   Int?     // 0=Sun, 6=Sat; null if using specific date
+  date        DateTime? // specific date override
+  startTime   String   // "09:00"
+  endTime     String   // "18:00"
+  breaks      Json?    // [{ start: "12:00", end: "13:00" }]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  therapist Therapist @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+
+  @@index([therapistId])
+}
+
+// ─── Rooms ───────────────────────────────────────────────────────────────────
+
+model Room {
+  id                   String   @id @default(cuid())
+  businessId           String
+  name                 String
+  compatibleCategories String[]
+  active               Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@index([businessId])
+}
+
+// ─── Policies ─────────────────────────────────────────────────────────────────
+
+model Policy {
+  id                  String   @id @default(cuid())
+  businessId          String   @unique
+  cancellationPolicy  String?
+  lateArrivalPolicy   String?
+  parking             String?
+  depositPolicy       String?
+  refundRule          String?
+  medicalDisclaimer   String?
+  handoffRules        Json?    // [{ trigger: "...", action: "..." }]
+  doNotSayRules       String[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+// ─── Appointments ─────────────────────────────────────────────────────────────
+
+model Appointment {
+  id          String   @id @default(cuid())
+  businessId  String
+  therapistId String
+  roomId      String?
+  customerId  String?
+  startTime   DateTime
+  endTime     DateTime
+  notes       String?
+  cancelled   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  therapist Therapist  @relation(fields: [therapistId], references: [id])
+  room      Room?      @relation(fields: [roomId], references: [id])
+  customer  Customer?  @relation(fields: [customerId], references: [id])
+
+  @@index([therapistId, startTime])
+  @@index([businessId, startTime])
+}
+
+// ─── Customers ───────────────────────────────────────────────────────────────
+
+model Customer {
+  id         String   @id @default(cuid())
+  businessId String
+  name       String
+  phone      String
+  language   String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  business        Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  bookingRequests BookingRequest[]
+  appointments    Appointment[]
+
+  @@unique([businessId, phone])
+  @@index([businessId])
+}
+
+// ─── Booking Requests ─────────────────────────────────────────────────────────
+
+model BookingRequest {
+  id                   String               @id @default(cuid())
+  businessId           String
+  customerId           String?
+  serviceId            String?
+  customerName         String
+  customerPhone        String
+  requestedDate        String               // "2026-05-01"
+  preferredSlot        String?              // "17:00"
+  recommendedSlotsJson Json?
+  notes                String?
+  source               BookingSource        @default(web)
+  status               BookingRequestStatus @default(pending_owner_confirmation)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  business Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id])
+  service  Service?  @relation(fields: [serviceId], references: [id])
+
+  @@index([businessId, status])
+}
+
+// ─── Skills Files ─────────────────────────────────────────────────────────────
+
+model SkillsFile {
+  id         String           @id @default(cuid())
+  businessId String
+  version    Int              @default(1)
+  status     SkillsFileStatus @default(draft)
+  content    Json             // the skills YAML/JSON structure
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  business Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  tests    SkillsTest[]
+
+  @@index([businessId, status])
+}
+
+model SkillsTest {
+  id           String   @id @default(cuid())
+  skillsFileId String
+  scenario     String
+  input        String
+  expectedBehavior String
+  passed       Boolean?
+  result       String?
+  runAt        DateTime?
+  createdAt    DateTime @default(now())
+
+  skillsFile SkillsFile @relation(fields: [skillsFileId], references: [id], onDelete: Cascade)
+}
+
+// ─── Call Sessions ────────────────────────────────────────────────────────────
+
+model CallSession {
+  id              String      @id @default(cuid())
+  businessId      String
+  twilioCallSid   String      @unique
+  callerPhone     String?
+  startedAt       DateTime    @default(now())
+  endedAt         DateTime?
+  durationSeconds Int?
+  outcome         CallOutcome?
+  transcriptJson  Json?
+  createdAt       DateTime    @default(now())
+
+  business      Business      @relation(fields: [businessId], references: [id])
+  conversations Conversation[]
+  usageEvents   UsageEvent[]
+
+  @@index([businessId])
+}
+
+model Conversation {
+  id            String   @id @default(cuid())
+  callSessionId String?
+  businessId    String
+  channel       String   // phone | web | sms
+  messagesJson  Json     @default("[]")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  callSession CallSession? @relation(fields: [callSessionId], references: [id])
+
+  @@index([businessId])
+}
+
+// ─── Usage Events ─────────────────────────────────────────────────────────────
+
+model UsageEvent {
+  id            String         @id @default(cuid())
+  businessId    String
+  callSessionId String?
+  eventType     UsageEventType
+  quantity      Float          @default(1)
+  unitCostUsd   Float?
+  metadata      Json?
+  createdAt     DateTime       @default(now())
+
+  business    Business     @relation(fields: [businessId], references: [id])
+  callSession CallSession? @relation(fields: [callSessionId], references: [id])
+
+  @@index([businessId, createdAt])
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+model Notification {
+  id         String             @id @default(cuid())
+  businessId String
+  toPhone    String
+  body       String
+  status     NotificationStatus @default(pending)
+  twilioSid  String?
+  createdAt  DateTime           @default(now())
+  sentAt     DateTime?
+
+  @@index([businessId])
+}
