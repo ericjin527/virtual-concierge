@@ -2,7 +2,7 @@
 dockerfilePath = "apps/widget/Dockerfile"
 
 [deploy]
-startCommand = "sh -c 'cd apps/widget && pnpm exec next start'"
+startCommand = "sh -c 'cd apps/widget && pnpm start'"
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"
