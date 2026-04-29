@@ -8,10 +8,14 @@ import type { AgentContext, AgentMessage } from '@repo/agent';
 export class TwilioService {
   private readonly logger = new Logger(TwilioService.name);
 
+  private digitsOnly(phone: string): string {
+    return phone.replace(/\D/g, '').slice(-10);
+  }
+
   async handleIncomingCall(callSid: string, fromPhone: string, toPhone: string): Promise<string> {
-    const business = await prisma.business.findFirst({
-      where: { publicPhone: toPhone, active: true },
-    });
+    const digits = this.digitsOnly(toPhone);
+    const allBusinesses = await prisma.business.findMany({ where: { active: true } });
+    const business = allBusinesses.find((b) => this.digitsOnly(b.publicPhone) === digits) ?? null;
 
     if (!business) {
       this.logger.warn(`No business found for phone ${toPhone}`);
