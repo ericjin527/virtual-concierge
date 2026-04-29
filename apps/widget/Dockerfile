@@ -19,4 +19,4 @@ RUN cd apps/widget && pnpm exec next build
 
 EXPOSE 3001
 
-CMD ["sh", "-c", "cd apps/widget && pnpm start"]
+CMD ["sh", "-c", "cd apps/widget && pnpm exec next start -p ${PORT:-3001}"]
