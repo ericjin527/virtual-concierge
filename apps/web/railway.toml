@@ -1,0 +1,8 @@
+[build]
+dockerfilePath = "apps/web/Dockerfile"
+
+[deploy]
+startCommand = "sh -c 'cd apps/web && pnpm exec next start -p ${PORT:-3000}'"
+healthcheckPath = "/health"
+healthcheckTimeout = 60
+restartPolicyType = "on_failure"
