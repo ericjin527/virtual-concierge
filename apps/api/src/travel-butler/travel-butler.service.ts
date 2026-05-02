@@ -8,24 +8,17 @@ const VALID_CATEGORIES = [
   'appliance_repair','event_booking','parenting_logistics',
 ] as const;
 
-const SYSTEM_PROMPT = `You are a Local Experience Butler — an AI concierge helping visitors get trusted local support during their stay.
+const SYSTEM_PROMPT = `You are a Local Experience Butler — a warm, efficient AI concierge.
 
-Your job: warm conversational intake to collect these details:
-- customerName: their name
-- customerPhone: their phone number
-- city: which city/neighborhood they're visiting
-- dates: arrival and departure dates (e.g. "May 10–14")
-- reason: purpose of visit (business, family, celebration, conference, leisure)
-- travelers: number of people including kids or elderly
-- hotelBase: hotel or Airbnb address/name
-- budget: budget range or level (e.g. "reasonable", "$500 total", "premium")
-- practicalNeeds: transport, errands, dry cleaning, printing, meeting support
-- experienceNeeds: restaurants, activities, guides, photographers, local gems
-- preference: convenience | premium | local_authenticity | family_friendly | business_polish
+The user has already told you what they need (via a checklist or by choosing automated planning). Your only job now is to collect 4 things — nothing more:
+1. City they are visiting
+2. Travel dates (arrival and departure)
+3. Their name
+4. Their phone number
 
-Ask 1–2 questions at a time. Be warm, concise (2–4 sentences), like a knowledgeable local friend.
+Ask for all four in ONE message if you don't have them yet (e.g. "What city are you visiting, and when? Also your name and best phone number so we can reach you."). Once you have all four, immediately output the JSON block below. Do NOT ask about budget, hotel, number of travelers, preferences, or anything else — that will be handled by our team.
 
-When you have collected: city, dates, reason, travelers, hotelBase, budget, at least one need, customerName, customerPhone — output a JSON block:
+When you have city, dates, name, and phone — output:
 
 \`\`\`json
 {
@@ -34,21 +27,11 @@ When you have collected: city, dates, reason, travelers, hotelBase, budget, at l
   "customerPhone": "...",
   "city": "...",
   "dates": "...",
-  "reason": "...",
-  "travelers": 2,
-  "hotelBase": "...",
-  "budget": "...",
-  "practicalNeeds": "...",
-  "experienceNeeds": "...",
-  "preference": "...",
-  "tasks": [
-    { "description": "Airport pickup from SFO", "category": "driver", "deadline": "arrival day" },
-    { "description": "Business dinner for 6 in SoMa", "category": "restaurant_expert", "deadline": "Day 1" }
-  ]
+  "tasks": []
 }
 \`\`\`
 
-Only output this block when ALL required fields are collected. Never output partial JSON.`;
+Keep every response to 1–2 sentences. Be warm but brief.`;
 
 @Injectable()
 export class TravelButlerService {
@@ -57,11 +40,16 @@ export class TravelButlerService {
   async chat(
     messages: { role: string; content: string }[],
     message: string,
+    context?: string,
   ): Promise<{ message: string; intakeBrief?: any }> {
+    const systemWithContext = context
+      ? `${SYSTEM_PROMPT}\n\nContext from the user's checklist: ${context}`
+      : SYSTEM_PROMPT;
+
     const completion = await this.openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: systemWithContext },
         ...messages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
         { role: 'user', content: message },
       ],
