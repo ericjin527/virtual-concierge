@@ -13,7 +13,16 @@ ${context}
 
 Your job in this conversation: collect city, dates, name, and phone in ONE message. Once you have all four, immediately output the JSON plan below — do not ask any other questions.
 
-When you have all four fields, respond with a warm 1-sentence confirmation and then output:
+When you have all four fields, respond with a warm 1-sentence confirmation and then output the JSON plan.
+
+IMPORTANT RULES FOR THE PLAN:
+1. Count the exact number of days from the dates given (e.g. May 29–June 3 = 6 days: May 29, 30, 31, June 1, 2, 3).
+2. Generate an agenda entry AND at least one task for EVERY single day of the trip — no days skipped.
+3. Spread the selected services across all days naturally (restaurants every evening, guide on day 2, bar on day 3, etc.).
+4. Use real calendar dates in the day labels (e.g. "Day 1 — Thu May 29", "Day 2 — Fri May 30").
+5. Task category must be one of: driver, restaurant_expert, errand_helper, local_guide, photographer, private_chef, cleaner, florist, family_helper, party_helper.
+
+Output format:
 
 \`\`\`json
 {
@@ -22,37 +31,19 @@ When you have all four fields, respond with a warm 1-sentence confirmation and t
   "customerPhone": "...",
   "city": "...",
   "dates": "...",
-  "planSummary": "2-3 sentence overview of what will be coordinated for this trip",
+  "planSummary": "2-3 sentence overview of what will be coordinated across the full trip",
   "agenda": [
-    {
-      "day": "Day 1 — Mon May 12",
-      "items": ["Arrive SFO, driver meets you at arrivals", "Dinner at local restaurant in the Mission"]
-    },
-    {
-      "day": "Day 2 — Tue May 13",
-      "items": ["Morning city tour with local guide", "Afternoon free / sightseeing", "Bar hopping in Castro"]
-    }
+    { "day": "Day 1 — Thu May 29", "items": ["Arrive, driver meets at airport", "Dinner at local izakaya in Shinjuku"] },
+    { "day": "Day 2 — Fri May 30", "items": ["Morning city tour with local guide", "Afternoon free", "Bar hopping in Shibuya"] },
+    { "day": "Day 3 — Sat May 31", "items": ["Photography session at Senso-ji", "Lunch in Asakusa", "Evening at rooftop bar"] }
   ],
   "tasks": [
-    {
-      "title": "Airport pickup",
-      "description": "Arrange ground transport from SFO on arrival day",
-      "category": "driver",
-      "day": "Day 1",
-      "time": "arrival"
-    },
-    {
-      "title": "Restaurant reservation",
-      "description": "Book dinner for the group at a local restaurant",
-      "category": "restaurant_expert",
-      "day": "Day 1",
-      "time": "dinner"
-    }
+    { "title": "Airport pickup", "description": "Arrange ground transport from Narita/Haneda on arrival", "category": "driver", "day": "Day 1 — Thu May 29", "time": "arrival" },
+    { "title": "Day 1 dinner reservation", "description": "Book dinner at a local izakaya in Shinjuku", "category": "restaurant_expert", "day": "Day 1 — Thu May 29", "time": "dinner" },
+    { "title": "City tour with local guide", "description": "Morning guided tour of key neighborhoods", "category": "local_guide", "day": "Day 2 — Fri May 30", "time": "morning" }
   ]
 }
-\`\`\`
-
-Generate tasks ONLY for the services the user selected. Each selected service should become 1–2 tasks. Use realistic day/time values based on the dates provided. Task category must be one of: driver, restaurant_expert, errand_helper, local_guide, photographer, private_chef, cleaner, florist, family_helper, party_helper.`;
+\`\`\``;
 
 @Injectable()
 export class TravelButlerService {
