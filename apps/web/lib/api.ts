@@ -69,4 +69,33 @@ export const api = {
     apiFetch(`/businesses/${businessId}/booking-requests${status ? `?status=${status}` : ''}`),
   updateBookingRequest: (businessId: string, id: string, data: unknown) =>
     apiFetch(`/businesses/${businessId}/booking-requests/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+
+  // Calls / Transcripts
+  getCalls: (businessId: string) => apiFetch(`/businesses/${businessId}/calls`),
+  getCall: (businessId: string, callId: string) => apiFetch(`/businesses/${businessId}/calls/${callId}`),
+
+  // Usage
+  getMonthlyUsage: (businessId: string) => apiFetch(`/businesses/${businessId}/usage/monthly`),
+
+  // Butler Network — Experts
+  getExperts: (category?: string) => apiFetch(`/experts${category ? `?category=${category}` : ''}`),
+  getExpert: (id: string) => apiFetch(`/experts/${id}`),
+  approveExpert: (id: string) => apiFetch(`/experts/${id}/approve`, { method: 'POST' }),
+  suspendExpert: (id: string) => apiFetch(`/experts/${id}/suspend`, { method: 'POST' }),
+
+  // Butler Network — Vendor Applications
+  getVendorApplications: (status?: string) => apiFetch(`/vendor-applications${status ? `?status=${status}` : ''}`),
+  submitVendorApplication: (data: unknown) => apiFetch('/vendor-applications', { method: 'POST', body: JSON.stringify(data) }),
+  approveVendorApplication: (id: string) => apiFetch(`/vendor-applications/${id}/approve`, { method: 'POST' }),
+  rejectVendorApplication: (id: string) => apiFetch(`/vendor-applications/${id}/reject`, { method: 'POST' }),
+
+  // Butler Network — Tasks
+  getTasks: (status?: string, category?: string) => apiFetch(`/tasks${status ? `?status=${status}` : ''}${category ? `&category=${category}` : ''}`),
+  getTask: (id: string) => apiFetch(`/tasks/${id}`),
+  assignExpert: (taskId: string, expertId: string) => apiFetch(`/tasks/${taskId}/assign`, { method: 'POST', body: JSON.stringify({ expertId }) }),
+  updateTaskStatus: (taskId: string, status: string) => apiFetch(`/tasks/${taskId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+
+  // Butler Network — AI Chat
+  butlerChat: (messages: unknown[], message: string, category: string) =>
+    apiFetch('/butler/chat', { method: 'POST', body: JSON.stringify({ messages, message, category }) }),
 };

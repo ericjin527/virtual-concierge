@@ -12,6 +12,11 @@ import { BookingRequestsModule } from './booking-requests/booking-requests.modul
 import { TwilioModule } from './twilio/twilio.module';
 import { WidgetModule } from './widget/widget.module';
 import { UsageModule } from './usage/usage.module';
+// Butler Network
+import { ExpertsModule } from './experts/experts.module';
+import { VendorApplicationsModule } from './vendor-applications/vendor-applications.module';
+import { TasksModule } from './tasks/tasks.module';
+import { ButlerModule } from './butler/butler.module';
 
 @Module({
   controllers: [HealthController],
@@ -28,6 +33,11 @@ import { UsageModule } from './usage/usage.module';
     TwilioModule,
     WidgetModule,
     UsageModule,
+    // Butler Network
+    ExpertsModule,
+    VendorApplicationsModule,
+    TasksModule,
+    ButlerModule,
   ],
 })
 export class AppModule {}

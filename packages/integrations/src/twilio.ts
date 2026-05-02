@@ -26,11 +26,9 @@ function xmlEscape(text: string): string {
 export function buildTwimlGather(prompt: string, voice = 'Polly.Joanna', language = 'en-US'): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Gather input="speech" action="/twilio/voice/process-turn" method="POST" speechTimeout="auto" language="${language}">
+  <Gather input="speech" action="/twilio/voice/process-turn" method="POST" speechTimeout="3" actionOnEmptyResult="true" language="${language}">
     <Say voice="${voice}">${xmlEscape(prompt)}</Say>
   </Gather>
-  <Say voice="${voice}">I didn't catch that. Let me transfer you to our team. Goodbye.</Say>
-  <Hangup/>
 </Response>`;
 }
 

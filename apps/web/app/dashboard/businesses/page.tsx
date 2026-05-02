@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api } from '../../../lib/api';
 import { s } from '../../../lib/styles';
 
 const WIDGET_URL = process.env.NEXT_PUBLIC_WIDGET_URL ?? 'http://localhost:3001';
@@ -45,6 +44,8 @@ export default function BusinessesPage() {
             </div>
             <div style={s.row}>
               <a href={`/dashboard/businesses/${b.id}/booking-requests`} style={{ ...s.link, fontWeight: 600 }}>Bookings</a>
+              <a href={`/dashboard/businesses/${b.id}/transcripts`} style={s.link}>Calls</a>
+              <a href={`/dashboard/businesses/${b.id}/usage`} style={s.link}>Usage</a>
               <a href={`/dashboard/businesses/${b.id}/services`} style={s.link}>Services</a>
               <a href={`/dashboard/businesses/${b.id}/therapists`} style={s.link}>Therapists</a>
               <a href={`/dashboard/businesses/${b.id}/rooms`} style={s.link}>Rooms</a>

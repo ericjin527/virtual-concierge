@@ -372,3 +372,192 @@ model Notification {
 
   @@index([businessId])
 }
+
+// ─── Local Butler Network ─────────────────────────────────────────────────────
+
+enum ExpertCategory {
+  appliance_repair
+  event_booking
+  parenting_logistics
+}
+
+enum ExpertStatus {
+  pending
+  approved
+  suspended
+}
+
+enum TaskStatus {
+  new
+  matched
+  accepted
+  diagnosing
+  quote_submitted
+  quote_approved
+  in_progress
+  completed
+  cancelled
+  declined
+}
+
+enum TaskSource {
+  web
+  phone
+  sms
+}
+
+enum QuoteStatus {
+  pending
+  approved
+  declined
+}
+
+enum MessageRole {
+  customer
+  expert
+  admin
+  butler
+}
+
+model Expert {
+  id                  String         @id @default(cuid())
+  clerkUserId         String?        @unique
+  name                String
+  businessName        String?
+  email               String         @unique
+  phone               String
+  bio                 String?
+  photoUrl            String?
+  category            ExpertCategory
+  serviceArea         String
+  services            String[]
+  specialties         String[]
+  certifications      String[]
+  insuranceVerified   Boolean        @default(false)
+  backgroundChecked   Boolean        @default(false)
+  diagnosticFee       Float?
+  languages           String[]       @default(["en"])
+  rating              Float?
+  completedJobs       Int            @default(0)
+  responseTimeMinutes Int?
+  status              ExpertStatus   @default(pending)
+  badges              String[]
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  tasks    Task[]
+  quotes   TaskQuote[]
+  bookings TaskBooking[]
+  reviews  ExpertReview[]
+
+  @@index([category, status])
+  @@index([serviceArea])
+}
+
+model VendorApplication {
+  id              String         @id @default(cuid())
+  name            String
+  businessName    String?
+  email           String
+  phone           String
+  category        ExpertCategory
+  serviceArea     String
+  services        String[]
+  certDocUrls     String[]
+  insuranceDocUrl String?
+  notes           String?
+  status          ExpertStatus   @default(pending)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([status])
+}
+
+model Lead {
+  id        String   @id @default(cuid())
+  name      String?
+  phone     String?
+  email     String?
+  createdAt DateTime @default(now())
+
+  tasks Task[]
+}
+
+model Task {
+  id          String         @id @default(cuid())
+  leadId      String?
+  expertId    String?
+  category    ExpertCategory
+  intakeBrief Json
+  address     String?
+  urgency     String?
+  status      TaskStatus     @default(new)
+  source      TaskSource     @default(web)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  lead     Lead?          @relation(fields: [leadId], references: [id])
+  expert   Expert?        @relation(fields: [expertId], references: [id])
+  quotes   TaskQuote[]
+  booking  TaskBooking?
+  reviews  ExpertReview[]
+  messages TaskMessage[]
+
+  @@index([status])
+  @@index([expertId])
+  @@index([category, status])
+}
+
+model TaskQuote {
+  id          String      @id @default(cuid())
+  taskId      String
+  expertId    String
+  amount      Float
+  description String
+  status      QuoteStatus @default(pending)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  expert Expert @relation(fields: [expertId], references: [id])
+
+  @@index([taskId])
+}
+
+model TaskBooking {
+  id          String    @id @default(cuid())
+  taskId      String    @unique
+  expertId    String
+  scheduledAt DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  expert Expert @relation(fields: [expertId], references: [id])
+}
+
+model ExpertReview {
+  id        String   @id @default(cuid())
+  taskId    String
+  expertId  String
+  rating    Int
+  body      String?
+  createdAt DateTime @default(now())
+
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  expert Expert @relation(fields: [expertId], references: [id])
+
+  @@index([expertId])
+}
+
+model TaskMessage {
+  id        String      @id @default(cuid())
+  taskId    String
+  fromRole  MessageRole
+  body      String
+  createdAt DateTime    @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
