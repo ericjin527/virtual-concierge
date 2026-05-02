@@ -90,7 +90,11 @@ export default function ExperienceTrackingPage() {
   return (
     <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', color: '#111', minHeight: '100vh', background: '#fafafa' }}>
       <nav style={{ borderBottom: '1px solid #e5e7eb', padding: '1rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff' }}>
-        <a href="/" style={{ fontWeight: 800, fontSize: '1.1rem', textDecoration: 'none', color: '#111' }}>Local Butler</a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+          <a href="/" style={{ fontWeight: 800, fontSize: '1.1rem', textDecoration: 'none', color: '#111' }}>Local Butler</a>
+          <a href="/" style={{ fontSize: '0.85rem', color: '#6b7280', textDecoration: 'none' }}>← Home</a>
+          <a href="/travel" style={{ fontSize: '0.85rem', color: '#6b7280', textDecoration: 'none' }}>Plan another visit</a>
+        </div>
         <span style={{ fontSize: '0.78rem', color: '#9ca3af' }}>Ref #{id.slice(-6).toUpperCase()}</span>
       </nav>
 
