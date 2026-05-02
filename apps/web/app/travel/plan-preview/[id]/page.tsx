@@ -92,7 +92,7 @@ export default function PlanPreviewPage() {
   if (plan?.tasks) {
     for (const t of plan.tasks) {
       if (!tasksByDay[t.day]) tasksByDay[t.day] = [];
-      tasksByDay[t.day].push(t);
+      tasksByDay[t.day]!.push(t);
     }
   }
 
