@@ -18,9 +18,9 @@ When you have all four fields, respond with a warm 1-sentence confirmation and t
 IMPORTANT RULES FOR THE PLAN:
 1. Count the exact number of days from the dates given (e.g. May 29–June 3 = 6 days: May 29, 30, 31, June 1, 2, 3).
 2. Generate an agenda entry AND at least one task for EVERY single day of the trip — no days skipped.
-3. Spread the selected services across all days naturally (restaurants every evening, guide on day 2, bar on day 3, etc.).
-4. Use real calendar dates in the day labels (e.g. "Day 1 — Thu May 29", "Day 2 — Fri May 30").
-5. Task category must be one of: driver, restaurant_expert, errand_helper, local_guide, photographer, private_chef, cleaner, florist, family_helper, party_helper.
+3. Use real calendar dates in the day labels (e.g. "Day 1 — Thu May 29", "Day 2 — Fri May 30").
+4. STRICT: Only create tasks for the categories listed in the context. If the context says "restaurant_expert" only, every task must be category "restaurant_expert". Do NOT invent tasks for categories not listed. Do NOT add drivers, guides, photographers, or any other service unless it is explicitly listed in the allowed categories.
+5. Spread the allowed services across all days (e.g. if only restaurant: breakfast/lunch/dinner reservations for each day).
 
 Output format:
 

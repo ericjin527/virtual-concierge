@@ -5,18 +5,18 @@ import { api } from '../../lib/api';
 interface Message { role: 'user' | 'assistant'; content: string }
 
 const SERVICES = [
-  { id: 'hotel',       icon: '🏨', label: 'Hotel' },
-  { id: 'restaurant',  icon: '🍽️', label: 'Restaurant' },
-  { id: 'sightseeing', icon: '🗺️', label: 'Sightseeing' },
-  { id: 'transport',   icon: '🚗', label: 'Transport' },
-  { id: 'bar',         icon: '🍸', label: 'Bar / Nightlife' },
-  { id: 'nightclub',   icon: '🎶', label: 'Nightclub' },
-  { id: 'errand',      icon: '📦', label: 'Errand' },
-  { id: 'photography', icon: '📷', label: 'Photography' },
-  { id: 'local_guide', icon: '🧭', label: 'Local Guide' },
-  { id: 'family',      icon: '👨‍👧', label: 'Family Support' },
-  { id: 'business',    icon: '💼', label: 'Business Support' },
-  { id: 'emergency',   icon: '🆘', label: 'Emergency Help' },
+  { id: 'hotel',       icon: '🏨', label: 'Hotel',            category: 'errand_helper' },
+  { id: 'restaurant',  icon: '🍽️', label: 'Restaurant',       category: 'restaurant_expert' },
+  { id: 'sightseeing', icon: '🗺️', label: 'Sightseeing',      category: 'local_guide' },
+  { id: 'transport',   icon: '🚗', label: 'Transport',         category: 'driver' },
+  { id: 'bar',         icon: '🍸', label: 'Bar / Nightlife',   category: 'local_guide' },
+  { id: 'nightclub',   icon: '🎶', label: 'Nightclub',         category: 'errand_helper' },
+  { id: 'errand',      icon: '📦', label: 'Errand',            category: 'errand_helper' },
+  { id: 'photography', icon: '📷', label: 'Photography',       category: 'photographer' },
+  { id: 'local_guide', icon: '🧭', label: 'Local Guide',       category: 'local_guide' },
+  { id: 'family',      icon: '👨‍👧', label: 'Family Support',   category: 'family_helper' },
+  { id: 'business',    icon: '💼', label: 'Business Support',  category: 'errand_helper' },
+  { id: 'emergency',   icon: '🆘', label: 'Emergency Help',    category: 'errand_helper' },
 ];
 
 type Mode = 'pick' | 'chat';
@@ -60,9 +60,11 @@ export default function TravelPage() {
 
     try {
       const prior = next.slice(0, -1).map(m => ({ role: m.role, content: m.content }));
+      const selectedSvcs = selected.map(id => SERVICES.find(s => s.id === id)).filter(Boolean) as typeof SERVICES;
+      const allowedCategories = [...new Set(selectedSvcs.map(s => s.category))];
       const context = automated
-        ? 'User wants fully automated scheduling.'
-        : `User selected these services: ${selected.map(id => SERVICES.find(s => s.id === id)?.label ?? id).join(', ')}.`;
+        ? 'User wants fully automated scheduling. You may use any task category.'
+        : `User selected ONLY these services: ${selectedSvcs.map(s => s.label).join(', ')}. You MUST only create tasks with these exact categories: ${allowedCategories.join(', ')}. Do NOT add any other service or category.`;
 
       const data = await api.travelButlerChat(prior, userMsg, context, selected) as {
         message: string; complete: boolean; experienceId?: string;
