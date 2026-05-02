@@ -100,8 +100,8 @@ export const api = {
     apiFetch('/butler/chat', { method: 'POST', body: JSON.stringify({ messages, message, category }) }),
 
   // Travel Butler
-  travelButlerChat: (messages: unknown[], message: string, context?: string) =>
-    apiFetch('/travel-butler/chat', { method: 'POST', body: JSON.stringify({ messages, message, context }) }),
+  travelButlerChat: (messages: unknown[], message: string, context?: string, selectedServices?: string[]) =>
+    apiFetch('/travel-butler/chat', { method: 'POST', body: JSON.stringify({ messages, message, context, selectedServices }) }),
 
   // Experiences
   getExperiences: (status?: string, type?: string) =>

@@ -64,13 +64,18 @@ export default function TravelPage() {
         ? 'User wants fully automated scheduling.'
         : `User selected these services: ${selected.map(id => SERVICES.find(s => s.id === id)?.label ?? id).join(', ')}.`;
 
-      const data = await api.travelButlerChat(prior, userMsg, context) as {
+      const data = await api.travelButlerChat(prior, userMsg, context, selected) as {
         message: string; complete: boolean; experienceId?: string;
       };
       setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
       if (data.complete) {
         setComplete(true);
-        if (data.experienceId) setExperienceId(data.experienceId);
+        if (data.experienceId) {
+          setExperienceId(data.experienceId);
+          setTimeout(() => {
+            window.location.href = `/travel/experience/${data.experienceId}`;
+          }, 2000);
+        }
       }
     } catch {
       setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I hit a snag. Please try again." }]);
