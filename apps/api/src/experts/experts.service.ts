@@ -1,6 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@repo/db';
 
+export interface ExpertProfileDto {
+  name?: string;
+  bio?: string;
+  photoUrl?: string;
+  phone?: string;
+  cities?: string[];
+  categories?: string[];
+  languages?: string[];
+  isAvailable?: boolean;
+  maxConcurrentJobs?: number;
+}
+
 @Injectable()
 export class ExpertsService {
   findAll(category?: string) {
@@ -20,6 +32,48 @@ export class ExpertsService {
     });
     if (!expert) throw new NotFoundException('Expert not found');
     return expert;
+  }
+
+  async findByClerkUserId(clerkUserId: string) {
+    return prisma.expert.findUnique({ where: { clerkUserId } });
+  }
+
+  async upsertByClerkUserId(clerkUserId: string, data: ExpertProfileDto) {
+    const existing = await prisma.expert.findUnique({ where: { clerkUserId } });
+    if (existing) {
+      return prisma.expert.update({
+        where: { clerkUserId },
+        data: {
+          ...(data.name ? { name: data.name } : {}),
+          ...(data.bio !== undefined ? { bio: data.bio } : {}),
+          ...(data.photoUrl !== undefined ? { photoUrl: data.photoUrl } : {}),
+          ...(data.phone ? { phone: data.phone } : {}),
+          ...(data.cities ? { cities: data.cities } : {}),
+          ...(data.categories ? { categories: data.categories as any } : {}),
+          ...(data.languages ? { languages: data.languages } : {}),
+          ...(data.isAvailable !== undefined ? { isAvailable: data.isAvailable } : {}),
+          ...(data.maxConcurrentJobs !== undefined ? { maxConcurrentJobs: data.maxConcurrentJobs } : {}),
+        },
+      });
+    }
+    return prisma.expert.create({
+      data: {
+        clerkUserId,
+        name: data.name ?? 'New Expert',
+        phone: data.phone ?? '',
+        email: `clerk_${clerkUserId}@pending.localbutler.app`,
+        category: (data.categories?.[0] ?? 'errand_helper') as any,
+        categories: (data.categories ?? []) as any,
+        cities: data.cities ?? [],
+        bio: data.bio,
+        photoUrl: data.photoUrl,
+        languages: data.languages ?? ['en'],
+        isAvailable: data.isAvailable ?? true,
+        maxConcurrentJobs: data.maxConcurrentJobs ?? 2,
+        serviceArea: data.cities?.[0] ?? '',
+        status: 'pending',
+      },
+    });
   }
 
   create(data: any) {

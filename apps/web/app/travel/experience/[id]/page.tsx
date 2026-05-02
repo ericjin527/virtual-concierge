@@ -163,7 +163,10 @@ export default function ExperienceTrackingPage() {
                 const desc = task.intakeBrief.description;
                 const time = task.intakeBrief.time;
                 return (
-                  <div key={task.id} style={{ padding: '0.9rem 1.5rem', borderBottom: '1px solid #f9fafb', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
+                  <a key={task.id} href={`/travel/experience/${id}/task/${task.id}`} style={{ padding: '0.9rem 1.5rem', borderBottom: '1px solid #f9fafb', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#fafafa')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600, fontSize: '0.9rem' }}>
                         <span>{CATEGORY_ICONS[task.category] ?? '📋'}</span>
@@ -180,8 +183,9 @@ export default function ExperienceTrackingPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
                       <span style={{ width: 8, height: 8, borderRadius: '50%', background: st.dot, display: 'inline-block' }} />
                       <span style={{ background: st.color, padding: '2px 10px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 600 }}>{st.label}</span>
+                      <span style={{ color: '#d1d5db', fontSize: '0.8rem' }}>›</span>
                     </div>
-                  </div>
+                  </a>
                 );
               })}
             </div>

@@ -1,9 +1,26 @@
-import { Controller, Get, Post, Patch, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Param, Body, Query, Req, UseGuards } from '@nestjs/common';
 import { ExpertsService } from './experts.service';
+import { ClerkAuthGuard } from '../guards/clerk-auth.guard';
 
 @Controller('experts')
 export class ExpertsController {
   constructor(private readonly expertsService: ExpertsService) {}
+
+  // ── Authenticated: current expert ───────────────────────────────────────────
+
+  @UseGuards(ClerkAuthGuard)
+  @Get('me')
+  getMe(@Req() req: any) {
+    return this.expertsService.findByClerkUserId(req.clerkUserId);
+  }
+
+  @UseGuards(ClerkAuthGuard)
+  @Put('me')
+  updateMe(@Req() req: any, @Body() body: any) {
+    return this.expertsService.upsertByClerkUserId(req.clerkUserId, body);
+  }
+
+  // ── Public / Admin ───────────────────────────────────────────────────────────
 
   @Get()
   findAll(@Query('category') category?: string) {

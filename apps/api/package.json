@@ -20,6 +20,7 @@
     "@repo/integrations": "workspace:*",
     "@repo/scheduler": "workspace:*",
     "@repo/types": "workspace:*",
+    "@clerk/backend": "^1.0.0",
     "openai": "^4.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
