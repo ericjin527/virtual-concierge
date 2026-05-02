@@ -116,8 +116,11 @@ export const api = {
     phone: string;
   }) => apiFetch('/travel-butler/intake', { method: 'POST', body: JSON.stringify(data) }),
 
-  confirmTravelPlan: (experienceId: string) =>
-    apiFetch(`/travel-butler/experiences/${experienceId}/confirm`, { method: 'POST', body: JSON.stringify({}) }),
+  reviseTravelPlan: (experienceId: string, messages: unknown[], message: string, currentPlan: unknown) =>
+    apiFetch(`/travel-butler/experiences/${experienceId}/revise`, { method: 'POST', body: JSON.stringify({ messages, message, currentPlan }) }),
+
+  confirmTravelPlan: (experienceId: string, plan: unknown) =>
+    apiFetch(`/travel-butler/experiences/${experienceId}/confirm`, { method: 'POST', body: JSON.stringify({ plan }) }),
 
   // Experiences
   getExperiences: (status?: string, type?: string) =>

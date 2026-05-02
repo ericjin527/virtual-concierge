@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Param, Body, HttpCode } from '@nestjs/common';
+import { Controller, Post, Param, Body, HttpCode } from '@nestjs/common';
 import { TravelButlerService, IntakeDto } from './travel-butler.service';
 
 @Controller('travel-butler')
@@ -22,10 +22,18 @@ export class TravelButlerController {
     return this.service.createIntake(body);
   }
 
+  @Post('experiences/:id/revise')
+  async revise(
+    @Param('id') _id: string,
+    @Body() body: { messages: any[]; message: string; currentPlan: any },
+  ) {
+    return this.service.revisePlan(body.messages ?? [], body.message, body.currentPlan);
+  }
+
   @Post('experiences/:id/confirm')
   @HttpCode(200)
-  async confirm(@Param('id') id: string) {
-    await this.service.confirmPlan(id);
+  async confirm(@Param('id') id: string, @Body() body: { plan?: any }) {
+    await this.service.confirmPlan(id, body?.plan);
     return { success: true };
   }
 }

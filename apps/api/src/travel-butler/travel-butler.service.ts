@@ -251,15 +251,50 @@ export class TravelButlerService {
     });
   }
 
-  async confirmPlan(experienceId: string): Promise<void> {
+  async revisePlan(
+    messages: { role: string; content: string }[],
+    message: string,
+    currentPlan: any,
+  ): Promise<{ reply: string; revisedPlan?: any }> {
+    const systemPrompt = `You are a Local Experience Butler helping a traveler refine their trip plan.
+
+Current plan (JSON):
+${JSON.stringify(currentPlan, null, 2)}
+
+When the traveler asks to add, remove, or change tasks or agenda items, output a revised plan as a \`\`\`json block using the EXACT same structure as above.
+When answering a question or asking for clarification, respond conversationally — no JSON needed.
+Always acknowledge the change in 1–2 sentences before or after the JSON block.`;
+
+    const completion = await this.openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...messages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+        { role: 'user', content: message },
+      ],
+    });
+
+    const reply = completion.choices[0].message.content ?? '';
+    const jsonMatch = reply.match(/```json\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+      try {
+        const revisedPlan = JSON.parse(jsonMatch[1]);
+        const cleanReply = reply.replace(/```json[\s\S]*?```/, '').trim();
+        return { reply: cleanReply || 'Done — plan updated!', revisedPlan };
+      } catch {}
+    }
+    return { reply };
+  }
+
+  async confirmPlan(experienceId: string, planOverride?: any): Promise<void> {
     const experience = await prisma.experience.findUniqueOrThrow({
       where: { id: experienceId },
     });
 
-    if (!experience.planDraft) throw new Error('No plan draft to confirm');
+    if (!experience.planDraft && !planOverride) throw new Error('No plan draft to confirm');
     if (experience.status !== 'plan_ready') throw new Error('Plan already confirmed or not ready');
 
-    const plan = experience.planDraft as any;
+    const plan = planOverride ?? (experience.planDraft as any);
 
     await prisma.$transaction(async (tx: any) => {
       if (Array.isArray(plan.tasks)) {
