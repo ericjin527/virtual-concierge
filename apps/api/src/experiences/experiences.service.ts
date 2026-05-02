@@ -1,12 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@repo/db';
+import { prisma } from '@repo/db';
 
 @Injectable()
 export class ExperiencesService {
-  constructor(private prisma: PrismaService) {}
-
   list(status?: string, type?: string) {
-    return this.prisma.experience.findMany({
+    return prisma.experience.findMany({
       where: {
         ...(status ? { status: status as any } : {}),
         ...(type ? { type: type as any } : {}),
@@ -17,7 +15,7 @@ export class ExperiencesService {
   }
 
   get(id: string) {
-    return this.prisma.experience.findUniqueOrThrow({
+    return prisma.experience.findUniqueOrThrow({
       where: { id },
       include: {
         lead: true,
@@ -30,7 +28,7 @@ export class ExperiencesService {
   }
 
   updateStatus(id: string, status: string) {
-    return this.prisma.experience.update({
+    return prisma.experience.update({
       where: { id },
       data: { status: status as any },
     });

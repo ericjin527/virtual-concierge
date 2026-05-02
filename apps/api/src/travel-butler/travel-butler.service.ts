@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
-import { PrismaService } from '@repo/db';
+import { prisma } from '@repo/db';
 
 const VALID_CATEGORIES = [
   'driver','restaurant_expert','errand_helper','local_guide',
@@ -52,11 +52,7 @@ Only output this block when ALL required fields are collected. Never output part
 
 @Injectable()
 export class TravelButlerService {
-  private openai: OpenAI;
-
-  constructor(private prisma: PrismaService) {
-    this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  }
+  private openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   async chat(
     messages: { role: string; content: string }[],
@@ -87,7 +83,7 @@ export class TravelButlerService {
   }
 
   async createExperience(brief: any): Promise<{ id: string }> {
-    return this.prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: any) => {
       const lead = await tx.lead.create({
         data: { name: brief.customerName, phone: brief.customerPhone },
       });
