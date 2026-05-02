@@ -386,6 +386,10 @@ enum ExpertCategory {
   florist
   family_helper
   party_helper
+  // legacy values kept for DB compatibility
+  appliance_repair
+  event_booking
+  parenting_logistics
 }
 
 enum IntakeMode {
