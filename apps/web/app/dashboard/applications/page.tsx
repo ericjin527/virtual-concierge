@@ -10,7 +10,9 @@ interface Application {
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
-  appliance_repair: '🔧 Appliance Repair', event_booking: '🎉 Event Booking', parenting_logistics: '👨‍👧 Parenting',
+  driver: '🚗 Driver', restaurant_expert: '🍽️ Restaurant', errand_helper: '📦 Errand',
+  local_guide: '🗺️ Local Guide', photographer: '📷 Photography', private_chef: '👨‍🍳 Chef',
+  cleaner: '🧹 Cleaning', florist: '💐 Florist', family_helper: '👨‍👧 Family', party_helper: '🎉 Events',
 };
 
 export default function ApplicationsPage() {

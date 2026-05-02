@@ -1,89 +1,83 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { api } from '../../lib/api';
 
-interface Message { role: 'user' | 'assistant'; content: string }
-
 const SERVICES = [
-  { id: 'hotel',       icon: '🏨', label: 'Hotel',            category: 'errand_helper' },
-  { id: 'restaurant',  icon: '🍽️', label: 'Restaurant',       category: 'restaurant_expert' },
-  { id: 'sightseeing', icon: '🗺️', label: 'Sightseeing',      category: 'local_guide' },
-  { id: 'transport',   icon: '🚗', label: 'Transport',         category: 'driver' },
-  { id: 'bar',         icon: '🍸', label: 'Bar / Nightlife',   category: 'local_guide' },
-  { id: 'nightclub',   icon: '🎶', label: 'Nightclub',         category: 'errand_helper' },
-  { id: 'errand',      icon: '📦', label: 'Errand',            category: 'errand_helper' },
-  { id: 'photography', icon: '📷', label: 'Photography',       category: 'photographer' },
-  { id: 'local_guide', icon: '🧭', label: 'Local Guide',       category: 'local_guide' },
-  { id: 'family',      icon: '👨‍👧', label: 'Family Support',   category: 'family_helper' },
-  { id: 'business',    icon: '💼', label: 'Business Support',  category: 'errand_helper' },
-  { id: 'emergency',   icon: '🆘', label: 'Emergency Help',    category: 'errand_helper' },
+  { id: 'restaurant',  icon: '🍽️', label: 'Restaurant' },
+  { id: 'transport',   icon: '🚗', label: 'Transport' },
+  { id: 'sightseeing', icon: '🗺️', label: 'Sightseeing' },
+  { id: 'photography', icon: '📷', label: 'Photography' },
+  { id: 'hotel',       icon: '🏨', label: 'Hotel Help' },
+  { id: 'bar',         icon: '🍸', label: 'Bar / Nightlife' },
+  { id: 'local_guide', icon: '🧭', label: 'Local Guide' },
+  { id: 'family',      icon: '👨‍👧', label: 'Family Support' },
+  { id: 'errand',      icon: '📦', label: 'Errands' },
+  { id: 'emergency',   icon: '🆘', label: 'Emergency Help' },
 ];
 
-type Mode = 'pick' | 'chat';
+const BUDGET_OPTIONS = [
+  { value: 'budget',   label: 'Budget',    sub: 'Affordable picks' },
+  { value: 'mid',      label: 'Mid-range', sub: 'Best value' },
+  { value: 'luxury',   label: 'Luxury',    sub: 'Premium experience' },
+];
 
-const GREETING = (selected: string[]) =>
-  `Got it — you need help with: ${selected.join(', ')}. Just a few quick things: what city are you visiting, and what are your travel dates?`;
+type Route = 'pick' | 'delegation-form' | 'services-form';
+
+const inputStyle: React.CSSProperties = {
+  width: '100%', padding: '0.6rem 0.75rem', border: '1px solid #d1d5db',
+  borderRadius: 8, fontSize: '0.9rem', boxSizing: 'border-box', background: '#fff', outline: 'none',
+};
+const labelStyle: React.CSSProperties = {
+  display: 'block', fontSize: '0.78rem', fontWeight: 700,
+  color: '#374151', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.03em',
+};
 
 export default function TravelPage() {
-  const [mode, setMode] = useState<Mode>('pick');
+  const [route, setRoute] = useState<Route>('pick');
   const [selected, setSelected] = useState<string[]>([]);
-  const [automated, setAutomated] = useState<boolean | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [complete, setComplete] = useState(false);
-  const [experienceId, setExperienceId] = useState<string | null>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
 
-  function toggle(id: string) {
+  const [destination, setDestination] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [numPeople, setNumPeople] = useState(2);
+  const [budget, setBudget] = useState('mid');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  function toggleService(id: string) {
     setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   }
 
-  function startChat(isAutomated: boolean) {
-    setAutomated(isAutomated);
-    const greeting = isAutomated
-      ? `Great — I'll plan everything for you. What city are you visiting and what are your travel dates?`
-      : GREETING(selected.map(id => SERVICES.find(s => s.id === id)?.label ?? id));
-    setMessages([{ role: 'assistant', content: greeting }]);
-    setMode('chat');
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-  }
+  async function submit(intakeMode: 'full_delegation' | 'specific_services') {
+    setError('');
+    if (!destination.trim()) return setError('Please enter a destination.');
+    if (!startDate || !endDate) return setError('Please enter your travel dates.');
+    if (new Date(endDate) < new Date(startDate)) return setError('End date must be after start date.');
+    if (!name.trim()) return setError('Please enter your name.');
+    if (!phone.trim()) return setError('Please enter your phone number.');
+    if (intakeMode === 'specific_services' && selected.length === 0)
+      return setError('Please select at least one service.');
 
-  async function send() {
-    const userMsg = input.trim();
-    if (!userMsg || loading || complete) return;
-    setInput('');
-
-    const next: Message[] = [...messages, { role: 'user', content: userMsg }];
-    setMessages(next);
-    setLoading(true);
-
+    setSubmitting(true);
     try {
-      const prior = next.slice(0, -1).map(m => ({ role: m.role, content: m.content }));
-      const selectedSvcs = selected.map(id => SERVICES.find(s => s.id === id)).filter(Boolean) as typeof SERVICES;
-      const allowedCategories = [...new Set(selectedSvcs.map(s => s.category))];
-      const context = automated
-        ? 'User wants fully automated scheduling. You may use any task category.'
-        : `User selected ONLY these services: ${selectedSvcs.map(s => s.label).join(', ')}. You MUST only create tasks with these exact categories: ${allowedCategories.join(', ')}. Do NOT add any other service or category.`;
-
-      const data = await api.travelButlerChat(prior, userMsg, context, selected) as {
-        message: string; complete: boolean; experienceId?: string;
-      };
-      setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
-      if (data.complete) {
-        setComplete(true);
-        if (data.experienceId) {
-          setExperienceId(data.experienceId);
-          setTimeout(() => {
-            window.location.href = `/travel/experience/${data.experienceId}`;
-          }, 2000);
-        }
-      }
+      const result = await api.travelIntake({
+        intakeMode,
+        destination: destination.trim(),
+        startDate,
+        endDate,
+        numPeople,
+        budget: intakeMode === 'full_delegation' ? budget : undefined,
+        selectedServices: intakeMode === 'specific_services' ? selected : undefined,
+        name: name.trim(),
+        phone: phone.trim(),
+      }) as { experienceId: string };
+      window.location.href = `/travel/plan-preview/${result.experienceId}`;
     } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I hit a snag. Please try again." }]);
-    } finally {
-      setLoading(false);
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      setError('Something went wrong. Please try again.');
+      setSubmitting(false);
     }
   }
 
@@ -94,161 +88,203 @@ export default function TravelPage() {
         <a href="/join" style={{ background: '#111', color: '#fff', padding: '0.4rem 0.9rem', borderRadius: 6, textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600 }}>Join as expert</a>
       </nav>
 
-      <div style={{ maxWidth: 680, margin: '0 auto', padding: '2.5rem 1.5rem' }}>
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '2.5rem 1.5rem' }}>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.4rem' }}>Local Experience Butler</h1>
         <p style={{ color: '#6b7280', marginBottom: '2rem', lineHeight: 1.6 }}>
-          Visiting the Bay Area? We connect you with trusted locals for everything you need on the ground.
+          Tell us what you need and we'll connect you with trusted locals on the ground.
         </p>
 
-        {mode === 'pick' && (
+        {error && (
+          <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '0.75rem 1rem', borderRadius: 8, marginBottom: '1rem', fontSize: '0.88rem' }}>
+            {error}
+          </div>
+        )}
+
+        {/* ── Route picker ── */}
+        {route === 'pick' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <button onClick={() => setRoute('delegation-form')} style={{
+              padding: '1.25rem 1.5rem', borderRadius: 12, border: '1px solid #e5e7eb',
+              background: '#fff', cursor: 'pointer', textAlign: 'left',
+            }}>
+              <div style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 3 }}>✨ Plan everything for me</div>
+              <div style={{ color: '#6b7280', fontSize: '0.85rem' }}>Tell us your destination and dates — we'll handle the full itinerary</div>
+            </button>
+            <button onClick={() => setRoute('services-form')} style={{
+              padding: '1.25rem 1.5rem', borderRadius: 12, border: '1px solid #e5e7eb',
+              background: '#fff', cursor: 'pointer', textAlign: 'left',
+            }}>
+              <div style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 3 }}>🎯 I need specific services</div>
+              <div style={{ color: '#6b7280', fontSize: '0.85rem' }}>Pick exactly what you need help with</div>
+            </button>
+          </div>
+        )}
+
+        {/* ── Full Delegation Form ── */}
+        {route === 'delegation-form' && (
           <>
-            {/* Service checklist */}
-            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '1.5rem', marginBottom: '1.25rem' }}>
-              <p style={{ fontWeight: 700, marginBottom: '1rem', fontSize: '0.95rem' }}>What do you need help with?</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '0.5rem' }}>
+            <button onClick={() => setRoute('pick')} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '0.85rem', marginBottom: '1.25rem', padding: 0 }}>
+              ← Back
+            </button>
+            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+              <div>
+                <label style={labelStyle}>Destination *</label>
+                <input style={inputStyle} value={destination} onChange={e => setDestination(e.target.value)} placeholder="e.g. San Francisco" />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={labelStyle}>Arrival Date *</label>
+                  <input type="date" style={inputStyle} value={startDate} onChange={e => setStartDate(e.target.value)} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Departure Date *</label>
+                  <input type="date" style={inputStyle} value={endDate} onChange={e => setEndDate(e.target.value)} />
+                </div>
+              </div>
+
+              <div>
+                <label style={labelStyle}>Number of Travelers *</label>
+                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                  {[1, 2, 3, 4, 5].map(n => (
+                    <button key={n} type="button" onClick={() => setNumPeople(n)} style={{
+                      width: 42, height: 42, borderRadius: 8, border: numPeople === n ? '2px solid #111' : '1px solid #d1d5db',
+                      background: numPeople === n ? '#111' : '#fff', color: numPeople === n ? '#fff' : '#374151',
+                      fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem',
+                    }}>{n}</button>
+                  ))}
+                  <button type="button" onClick={() => setNumPeople(6)} style={{
+                    padding: '0 0.75rem', height: 42, borderRadius: 8, border: numPeople === 6 ? '2px solid #111' : '1px solid #d1d5db',
+                    background: numPeople === 6 ? '#111' : '#fff', color: numPeople === 6 ? '#fff' : '#374151',
+                    fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem',
+                  }}>6+</button>
+                </div>
+              </div>
+
+              <div>
+                <label style={labelStyle}>Budget *</label>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  {BUDGET_OPTIONS.map(b => (
+                    <button key={b.value} type="button" onClick={() => setBudget(b.value)} style={{
+                      flex: 1, padding: '0.6rem', borderRadius: 8, cursor: 'pointer', textAlign: 'center',
+                      border: budget === b.value ? '2px solid #111' : '1px solid #d1d5db',
+                      background: budget === b.value ? '#111' : '#fff',
+                      color: budget === b.value ? '#fff' : '#374151',
+                    }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{b.label}</div>
+                      <div style={{ fontSize: '0.72rem', opacity: 0.7, marginTop: 2 }}>{b.sub}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={labelStyle}>Your Name *</label>
+                  <input style={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="First Last" />
+                </div>
+                <div>
+                  <label style={labelStyle}>WhatsApp / Phone *</label>
+                  <input type="tel" style={inputStyle} value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 415 000 0000" />
+                </div>
+              </div>
+
+              <button onClick={() => submit('full_delegation')} disabled={submitting} style={{
+                padding: '0.85rem', background: '#111', color: '#fff', border: 'none', borderRadius: 8,
+                fontWeight: 700, fontSize: '1rem', cursor: submitting ? 'not-allowed' : 'pointer',
+                opacity: submitting ? 0.6 : 1, marginTop: 4,
+              }}>
+                {submitting ? 'Building your plan...' : 'Generate my plan →'}
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* ── Specific Services Form ── */}
+        {route === 'services-form' && (
+          <>
+            <button onClick={() => setRoute('pick')} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '0.85rem', marginBottom: '1.25rem', padding: 0 }}>
+              ← Back
+            </button>
+
+            {/* Service tile selection */}
+            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '1.25rem', marginBottom: '0.75rem' }}>
+              <p style={{ fontWeight: 700, marginBottom: '0.75rem', fontSize: '0.9rem' }}>What do you need help with?</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(135px, 1fr))', gap: '0.45rem' }}>
                 {SERVICES.map(s => (
-                  <button
-                    key={s.id}
-                    onClick={() => toggle(s.id)}
-                    style={{
-                      padding: '0.6rem 0.75rem',
-                      border: selected.includes(s.id) ? '2px solid #111' : '1px solid #e5e7eb',
-                      borderRadius: 8,
-                      background: selected.includes(s.id) ? '#111' : '#fff',
-                      color: selected.includes(s.id) ? '#fff' : '#374151',
-                      cursor: 'pointer',
-                      fontSize: '0.85rem',
-                      fontWeight: selected.includes(s.id) ? 700 : 400,
-                      textAlign: 'left',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.4rem',
-                    }}
-                  >
+                  <button key={s.id} type="button" onClick={() => toggleService(s.id)} style={{
+                    padding: '0.55rem 0.7rem', borderRadius: 8, cursor: 'pointer',
+                    border: selected.includes(s.id) ? '2px solid #111' : '1px solid #e5e7eb',
+                    background: selected.includes(s.id) ? '#111' : '#fff',
+                    color: selected.includes(s.id) ? '#fff' : '#374151',
+                    fontSize: '0.83rem', fontWeight: selected.includes(s.id) ? 700 : 400,
+                    textAlign: 'left', display: 'flex', alignItems: 'center', gap: '0.4rem',
+                  }}>
                     {s.icon} {s.label}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Mode selector */}
-            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '1.5rem', marginBottom: '1.25rem' }}>
-              <p style={{ fontWeight: 700, marginBottom: '1rem', fontSize: '0.95rem' }}>How would you like to proceed?</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                <button onClick={() => startChat(true)} style={{
-                  padding: '0.85rem 1rem', borderRadius: 8, border: '1px solid #e5e7eb',
-                  background: '#f9fafb', cursor: 'pointer', textAlign: 'left',
-                  fontSize: '0.9rem', fontWeight: 500,
-                }}>
-                  <div style={{ fontWeight: 700 }}>✨ Fully automated</div>
-                  <div style={{ color: '#6b7280', fontSize: '0.82rem', marginTop: 2 }}>Tell me your dates and we'll plan everything for you</div>
-                </button>
-                <button
-                  onClick={() => selected.length > 0 && startChat(false)}
-                  disabled={selected.length === 0}
-                  style={{
-                    padding: '0.85rem 1rem', borderRadius: 8, border: '1px solid #e5e7eb',
-                    background: selected.length > 0 ? '#f9fafb' : '#f3f4f6',
-                    cursor: selected.length > 0 ? 'pointer' : 'not-allowed',
-                    textAlign: 'left', fontSize: '0.9rem', fontWeight: 500,
-                    opacity: selected.length === 0 ? 0.5 : 1,
-                  }}
-                >
-                  <div style={{ fontWeight: 700 }}>
-                    🎯 Help with selected{selected.length > 0 ? ` (${selected.length})` : ''}
-                  </div>
-                  <div style={{ color: '#6b7280', fontSize: '0.82rem', marginTop: 2 }}>
-                    {selected.length > 0
-                      ? selected.map(id => SERVICES.find(s => s.id === id)?.icon).join(' ')
-                      : 'Select services above first'}
-                  </div>
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-
-        {mode === 'chat' && (
-          <>
-            {/* Back link */}
-            <button onClick={() => { setMode('pick'); setMessages([]); setComplete(false); }} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '0.85rem', marginBottom: '1rem', padding: 0 }}>
-              ← Change selections
-            </button>
-
-            {/* Selected tags (if not automated) */}
-            {!automated && selected.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '1rem' }}>
-                {selected.map(id => {
-                  const s = SERVICES.find(x => x.id === id);
-                  return s ? (
-                    <span key={id} style={{ background: '#111', color: '#fff', padding: '2px 10px', borderRadius: 99, fontSize: '0.78rem', fontWeight: 600 }}>
-                      {s.icon} {s.label}
-                    </span>
-                  ) : null;
-                })}
-              </div>
-            )}
-
-            {/* Chat window */}
-            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
-              <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: 280, maxHeight: 480, overflowY: 'auto' }}>
-                {messages.map((m, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
-                    <div style={{
-                      maxWidth: '80%', padding: '0.75rem 1rem',
-                      borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                      background: m.role === 'user' ? '#111' : '#f3f4f6',
-                      color: m.role === 'user' ? '#fff' : '#111',
-                      fontSize: '0.9rem', lineHeight: 1.55, whiteSpace: 'pre-wrap',
-                    }}>
-                      {m.content}
-                    </div>
-                  </div>
-                ))}
-                {loading && (
-                  <div style={{ display: 'flex' }}>
-                    <div style={{ padding: '0.75rem 1rem', background: '#f3f4f6', borderRadius: '16px 16px 16px 4px', color: '#9ca3af' }}>···</div>
-                  </div>
-                )}
-                {complete && (
-                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '1rem 1.25rem' }}>
-                    <div style={{ fontWeight: 700, color: '#166534', marginBottom: 4 }}>✓ Request received</div>
-                    <div style={{ fontSize: '0.85rem', color: '#374151', lineHeight: 1.6 }}>
-                      We'll review your plan and match you with trusted local experts. Expect a message within a few hours.
-                    </div>
-                    {experienceId && <div style={{ marginTop: 6, fontSize: '0.78rem', color: '#6b7280' }}>Ref: #{experienceId.slice(-6).toUpperCase()}</div>}
-                  </div>
-                )}
-                <div ref={bottomRef} />
+            {/* Rest of form */}
+            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+              <div>
+                <label style={labelStyle}>Destination *</label>
+                <input style={inputStyle} value={destination} onChange={e => setDestination(e.target.value)} placeholder="e.g. San Francisco" />
               </div>
 
-              {!complete && (
-                <div style={{ borderTop: '1px solid #f3f4f6', padding: '0.75rem 1rem', display: 'flex', gap: '0.5rem' }}>
-                  <input
-                    value={input}
-                    onChange={e => setInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-                    placeholder="Type your answer..."
-                    disabled={loading}
-                    autoFocus
-                    style={{
-                      flex: 1, padding: '0.65rem 0.9rem', border: '1px solid #e5e7eb',
-                      borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: '#fafafa',
-                    }}
-                  />
-                  <button
-                    onClick={send}
-                    disabled={!input.trim() || loading}
-                    style={{
-                      padding: '0.65rem 1.1rem', background: '#111', color: '#fff', border: 'none',
-                      borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem',
-                      opacity: !input.trim() || loading ? 0.4 : 1,
-                    }}
-                  >
-                    Send
-                  </button>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={labelStyle}>Arrival Date *</label>
+                  <input type="date" style={inputStyle} value={startDate} onChange={e => setStartDate(e.target.value)} />
                 </div>
-              )}
+                <div>
+                  <label style={labelStyle}>Departure Date *</label>
+                  <input type="date" style={inputStyle} value={endDate} onChange={e => setEndDate(e.target.value)} />
+                </div>
+              </div>
+
+              <div>
+                <label style={labelStyle}>Number of Travelers *</label>
+                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                  {[1, 2, 3, 4, 5].map(n => (
+                    <button key={n} type="button" onClick={() => setNumPeople(n)} style={{
+                      width: 42, height: 42, borderRadius: 8, border: numPeople === n ? '2px solid #111' : '1px solid #d1d5db',
+                      background: numPeople === n ? '#111' : '#fff', color: numPeople === n ? '#fff' : '#374151',
+                      fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem',
+                    }}>{n}</button>
+                  ))}
+                  <button type="button" onClick={() => setNumPeople(6)} style={{
+                    padding: '0 0.75rem', height: 42, borderRadius: 8, border: numPeople === 6 ? '2px solid #111' : '1px solid #d1d5db',
+                    background: numPeople === 6 ? '#111' : '#fff', color: numPeople === 6 ? '#fff' : '#374151',
+                    fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem',
+                  }}>6+</button>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={labelStyle}>Your Name *</label>
+                  <input style={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="First Last" />
+                </div>
+                <div>
+                  <label style={labelStyle}>WhatsApp / Phone *</label>
+                  <input type="tel" style={inputStyle} value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 415 000 0000" />
+                </div>
+              </div>
+
+              <button
+                onClick={() => submit('specific_services')}
+                disabled={submitting || selected.length === 0}
+                style={{
+                  padding: '0.85rem', background: '#111', color: '#fff', border: 'none', borderRadius: 8,
+                  fontWeight: 700, fontSize: '1rem',
+                  cursor: submitting || selected.length === 0 ? 'not-allowed' : 'pointer',
+                  opacity: submitting || selected.length === 0 ? 0.5 : 1, marginTop: 4,
+                }}
+              >
+                {submitting ? 'Building your plan...' : `Build plan for ${selected.length} service${selected.length !== 1 ? 's' : ''} →`}
+              </button>
             </div>
           </>
         )}

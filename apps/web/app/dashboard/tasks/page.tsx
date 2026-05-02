@@ -18,7 +18,9 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-  appliance_repair: '🔧 Appliance', event_booking: '🎉 Event', parenting_logistics: '👨‍👧 Parenting',
+  driver: '🚗 Driver', restaurant_expert: '🍽️ Restaurant', errand_helper: '📦 Errand',
+  local_guide: '🗺️ Local Guide', photographer: '📷 Photography', private_chef: '👨‍🍳 Chef',
+  cleaner: '🧹 Cleaning', florist: '💐 Florist', family_helper: '👨‍👧 Family', party_helper: '🎉 Events',
 };
 
 export default function TasksAdminPage() {

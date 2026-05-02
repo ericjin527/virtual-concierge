@@ -99,9 +99,25 @@ export const api = {
   butlerChat: (messages: unknown[], message: string, category: string) =>
     apiFetch('/butler/chat', { method: 'POST', body: JSON.stringify({ messages, message, category }) }),
 
-  // Travel Butler
+  // Travel Butler — legacy chat (mid-trip butler)
   travelButlerChat: (messages: unknown[], message: string, context?: string, selectedServices?: string[]) =>
     apiFetch('/travel-butler/chat', { method: 'POST', body: JSON.stringify({ messages, message, context, selectedServices }) }),
+
+  // Travel Butler — form-based intake
+  travelIntake: (data: {
+    intakeMode: 'full_delegation' | 'specific_services';
+    destination: string;
+    startDate: string;
+    endDate: string;
+    numPeople: number;
+    budget?: string;
+    selectedServices?: string[];
+    name: string;
+    phone: string;
+  }) => apiFetch('/travel-butler/intake', { method: 'POST', body: JSON.stringify(data) }),
+
+  confirmTravelPlan: (experienceId: string) =>
+    apiFetch(`/travel-butler/experiences/${experienceId}/confirm`, { method: 'POST', body: JSON.stringify({}) }),
 
   // Experiences
   getExperiences: (status?: string, type?: string) =>
