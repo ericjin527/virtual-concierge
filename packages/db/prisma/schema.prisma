@@ -379,6 +379,31 @@ enum ExpertCategory {
   appliance_repair
   event_booking
   parenting_logistics
+  driver
+  restaurant_expert
+  errand_helper
+  local_guide
+  photographer
+  private_chef
+  cleaner
+  florist
+  family_helper
+  party_helper
+}
+
+enum ExperienceType {
+  hosting
+  local_visit
+}
+
+enum ExperienceStatus {
+  intake
+  plan_ready
+  in_coordination
+  confirmed
+  in_progress
+  completed
+  cancelled
 }
 
 enum ExpertStatus {
@@ -480,32 +505,58 @@ model Lead {
   email     String?
   createdAt DateTime @default(now())
 
-  tasks Task[]
+  tasks       Task[]
+  experiences Experience[]
 }
 
 model Task {
-  id          String         @id @default(cuid())
-  leadId      String?
-  expertId    String?
-  category    ExpertCategory
-  intakeBrief Json
-  address     String?
-  urgency     String?
-  status      TaskStatus     @default(new)
-  source      TaskSource     @default(web)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id           String         @id @default(cuid())
+  leadId       String?
+  expertId     String?
+  experienceId String?
+  category     ExpertCategory
+  intakeBrief  Json
+  address      String?
+  urgency      String?
+  status       TaskStatus     @default(new)
+  source       TaskSource     @default(web)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
-  lead     Lead?          @relation(fields: [leadId], references: [id])
-  expert   Expert?        @relation(fields: [expertId], references: [id])
-  quotes   TaskQuote[]
-  booking  TaskBooking?
-  reviews  ExpertReview[]
-  messages TaskMessage[]
+  lead       Lead?          @relation(fields: [leadId], references: [id])
+  expert     Expert?        @relation(fields: [expertId], references: [id])
+  experience Experience?    @relation(fields: [experienceId], references: [id])
+  quotes     TaskQuote[]
+  booking    TaskBooking?
+  reviews    ExpertReview[]
+  messages   TaskMessage[]
 
   @@index([status])
   @@index([expertId])
   @@index([category, status])
+  @@index([experienceId])
+}
+
+model Experience {
+  id        String           @id @default(cuid())
+  type      ExperienceType
+  leadId    String?
+  city      String?
+  dates     String?
+  occasion  String?
+  travelers Int              @default(1)
+  vibe      String?
+  budget    String?
+  hotelBase String?
+  aiBrief   Json             @default("{}")
+  status    ExperienceStatus @default(intake)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  lead  Lead?  @relation(fields: [leadId], references: [id])
+  tasks Task[]
+
+  @@index([type, status])
 }
 
 model TaskQuote {

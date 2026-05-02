@@ -95,9 +95,42 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Categories */}
+      {/* Two main products */}
       <section style={{ maxWidth: 960, margin: '0 auto', padding: '3rem 2rem' }}>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem', textAlign: 'center' }}>What can we help with?</h2>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem', textAlign: 'center' }}>Two ways to use Local Butler</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
+          <a href="/travel" style={{ border: '2px solid #111', borderRadius: 12, padding: '2rem', textDecoration: 'none', color: '#111', display: 'block' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>✈️</div>
+            <div style={{ fontWeight: 800, fontSize: '1.15rem', marginBottom: '0.5rem' }}>Local Experience Butler</div>
+            <div style={{ color: '#6b7280', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+              Visiting the Bay Area? We handle the ground experience — restaurants, drivers, guides, errands, family support, and business-trip logistics.
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '1.25rem' }}>
+              {['Business trips', 'Family visits', 'Special occasions', 'Executive stays'].map(ex => (
+                <span key={ex} style={{ background: '#f3f4f6', padding: '2px 8px', borderRadius: 99, fontSize: '0.75rem', color: '#374151' }}>{ex}</span>
+              ))}
+            </div>
+            <span style={{ background: '#111', color: '#fff', padding: '0.5rem 1.1rem', borderRadius: 8, fontSize: '0.88rem', fontWeight: 700 }}>Plan your visit →</span>
+          </a>
+          <a href="/request" style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: '2rem', textDecoration: 'none', color: '#111', display: 'block' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🏠</div>
+            <div style={{ fontWeight: 800, fontSize: '1.15rem', marginBottom: '0.5rem' }}>Home & Local Services</div>
+            <div style={{ color: '#6b7280', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+              Need something fixed or sorted at home? Appliance repair, event help, parenting logistics — handled by trusted local experts.
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '1.25rem' }}>
+              {['Appliance repair', 'Event booking', 'Parenting logistics'].map(ex => (
+                <span key={ex} style={{ background: '#f3f4f6', padding: '2px 8px', borderRadius: 99, fontSize: '0.75rem', color: '#374151' }}>{ex}</span>
+              ))}
+            </div>
+            <span style={{ background: '#f3f4f6', color: '#111', padding: '0.5rem 1.1rem', borderRadius: 8, fontSize: '0.88rem', fontWeight: 700 }}>Get help →</span>
+          </a>
+        </div>
+      </section>
+
+      {/* Services detail */}
+      <section style={{ maxWidth: 960, margin: '0 auto', padding: '0 2rem 3rem' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem', textAlign: 'center', color: '#6b7280' }}>More ways we help</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
           {CATEGORIES.map(cat => (
             <a key={cat.slug} href={`/${cat.slug}`} style={{ border: '1px solid #e5e7eb', borderRadius: 10, padding: '1.5rem', textDecoration: 'none', color: '#111', display: 'block' }}>

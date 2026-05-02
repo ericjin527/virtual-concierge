@@ -98,4 +98,15 @@ export const api = {
   // Butler Network — AI Chat
   butlerChat: (messages: unknown[], message: string, category: string) =>
     apiFetch('/butler/chat', { method: 'POST', body: JSON.stringify({ messages, message, category }) }),
+
+  // Travel Butler
+  travelButlerChat: (messages: unknown[], message: string) =>
+    apiFetch('/travel-butler/chat', { method: 'POST', body: JSON.stringify({ messages, message }) }),
+
+  // Experiences
+  getExperiences: (status?: string, type?: string) =>
+    apiFetch(`/experiences${status ? `?status=${status}` : ''}${type ? `${status ? '&' : '?'}type=${type}` : ''}`),
+  getExperience: (id: string) => apiFetch(`/experiences/${id}`),
+  updateExperienceStatus: (id: string, status: string) =>
+    apiFetch(`/experiences/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
 };

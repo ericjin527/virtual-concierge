@@ -11,9 +11,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
         <nav style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', fontSize: '0.9rem' }}>
           <a href="/dashboard">Overview</a>
+          <a href="/dashboard/experiences">Experiences</a>
+          <a href="/dashboard/tasks">Tasks</a>
+          <a href="/dashboard/applications">Applications</a>
           <a href="/dashboard/businesses">Businesses</a>
-          <a href="/dashboard/booking-requests">Bookings</a>
-          <a href="/dashboard/usage">Usage</a>
           <UserButton />
         </nav>
       </header>

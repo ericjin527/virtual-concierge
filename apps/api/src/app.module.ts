@@ -17,6 +17,8 @@ import { ExpertsModule } from './experts/experts.module';
 import { VendorApplicationsModule } from './vendor-applications/vendor-applications.module';
 import { TasksModule } from './tasks/tasks.module';
 import { ButlerModule } from './butler/butler.module';
+import { TravelButlerModule } from './travel-butler/travel-butler.module';
+import { ExperiencesModule } from './experiences/experiences.module';
 
 @Module({
   controllers: [HealthController],
@@ -38,6 +40,8 @@ import { ButlerModule } from './butler/butler.module';
     VendorApplicationsModule,
     TasksModule,
     ButlerModule,
+    TravelButlerModule,
+    ExperiencesModule,
   ],
 })
 export class AppModule {}
