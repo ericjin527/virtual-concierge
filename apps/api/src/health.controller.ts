@@ -1,9 +1,14 @@
 import { Controller, Get } from '@nestjs/common';
 
-@Controller('health')
+@Controller()
 export class HealthController {
   @Get()
-  check() {
+  root() {
+    return { service: 'Local Butler API', status: 'ok' };
+  }
+
+  @Get('health')
+  health() {
     return { status: 'ok' };
   }
 }
