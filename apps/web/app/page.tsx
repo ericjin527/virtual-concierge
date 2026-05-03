@@ -1,3 +1,5 @@
+import { SignedIn, SignedOut } from '@clerk/nextjs';
+
 const HOW_IT_WORKS = [
   { step: '01', title: 'Tell us what you need', desc: 'Choose full delegation or pick specific services. A few quick fields — no long forms.' },
   { step: '02', title: 'We build your plan', desc: 'Our AI drafts a detailed itinerary. Chat with your butler to refine anything before confirming.' },
@@ -36,8 +38,13 @@ export default function HomePage() {
         </a>
         <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
           <a href="/travel" style={{ color: MUTED, textDecoration: 'none', fontSize: '0.88rem', fontWeight: 500 }}>Plan a visit</a>
-          <a href="/account" style={{ color: MUTED, textDecoration: 'none', fontSize: '0.88rem', fontWeight: 500 }}>My bookings</a>
+          <SignedIn>
+            <a href="/portal" style={{ color: MUTED, textDecoration: 'none', fontSize: '0.88rem', fontWeight: 500 }}>My portal</a>
+          </SignedIn>
           <a href="/expert" style={{ color: MUTED, textDecoration: 'none', fontSize: '0.88rem', fontWeight: 500 }}>Expert portal</a>
+          <SignedOut>
+            <a href="/sign-in" style={{ color: MUTED, textDecoration: 'none', fontSize: '0.88rem', fontWeight: 500 }}>Sign in</a>
+          </SignedOut>
           <a href="/travel" style={{
             background: A, color: '#fff', padding: '0.45rem 1.1rem',
             borderRadius: 8, textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600,

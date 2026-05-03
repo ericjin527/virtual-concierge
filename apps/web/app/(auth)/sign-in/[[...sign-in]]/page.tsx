@@ -11,9 +11,9 @@ export default function SignInPage() {
         <a href="/" style={{ fontWeight: 800, fontSize: '1.1rem', textDecoration: 'none', color: '#1a1714', fontFamily: 'Georgia, serif' }}>
           Local Butler
         </a>
-        <p style={{ color: '#6f6560', marginTop: '0.4rem', fontSize: '0.88rem' }}>Admin sign-in</p>
+        <p style={{ color: '#6f6560', marginTop: '0.4rem', fontSize: '0.88rem' }}>Sign in to your account</p>
       </div>
-      <SignIn afterSignInUrl="/dashboard" />
+      <SignIn fallbackRedirectUrl="/portal" />
     </div>
   );
 }
