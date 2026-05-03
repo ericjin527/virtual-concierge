@@ -3,11 +3,12 @@ import { prisma } from '@repo/db';
 
 @Injectable()
 export class ExperiencesService {
-  list(status?: string, type?: string) {
+  list(status?: string, type?: string, phone?: string) {
     return prisma.experience.findMany({
       where: {
         ...(status ? { status: status as any } : {}),
         ...(type ? { type: type as any } : {}),
+        ...(phone ? { lead: { phone } } : {}),
       },
       include: { lead: true, _count: { select: { tasks: true } } },
       orderBy: { createdAt: 'desc' },

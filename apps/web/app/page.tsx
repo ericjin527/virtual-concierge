@@ -29,9 +29,10 @@ export default function HomePage() {
         <a href="/" style={{ fontWeight: 800, fontSize: '1.1rem', textDecoration: 'none', color: '#1a1714', fontFamily: 'Georgia, serif', letterSpacing: '-0.02em' }}>
           Local Butler
         </a>
-        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
           <a href="/travel" style={{ color: '#6f6560', textDecoration: 'none', fontSize: '0.88rem', fontWeight: 500 }}>Plan a visit</a>
-          <a href="/expert" style={{ color: '#6f6560', textDecoration: 'none', fontSize: '0.88rem', fontWeight: 500 }}>For experts</a>
+          <a href="/account" style={{ color: '#6f6560', textDecoration: 'none', fontSize: '0.88rem', fontWeight: 500 }}>My bookings</a>
+          <a href="/expert" style={{ color: '#6f6560', textDecoration: 'none', fontSize: '0.88rem', fontWeight: 500 }}>Expert portal</a>
           <a href="/travel" style={{
             background: '#1a1714', color: '#fff', padding: '0.45rem 1.1rem',
             borderRadius: 8, textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600,

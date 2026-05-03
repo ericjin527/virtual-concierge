@@ -126,6 +126,8 @@ export const api = {
   // Experiences
   getExperiences: (status?: string, type?: string) =>
     apiFetch(`/experiences${status ? `?status=${status}` : ''}${type ? `${status ? '&' : '?'}type=${type}` : ''}`),
+  getExperiencesByPhone: (phone: string) =>
+    apiFetch(`/experiences?phone=${encodeURIComponent(phone)}`),
   getExperience: (id: string) => apiFetch(`/experiences/${id}`),
   updateExperienceStatus: (id: string, status: string) =>
     apiFetch(`/experiences/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),

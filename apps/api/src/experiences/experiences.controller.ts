@@ -6,8 +6,8 @@ export class ExperiencesController {
   constructor(private readonly service: ExperiencesService) {}
 
   @Get()
-  list(@Query('status') status?: string, @Query('type') type?: string) {
-    return this.service.list(status, type);
+  list(@Query('status') status?: string, @Query('type') type?: string, @Query('phone') phone?: string) {
+    return this.service.list(status, type, phone);
   }
 
   @Get(':id')
