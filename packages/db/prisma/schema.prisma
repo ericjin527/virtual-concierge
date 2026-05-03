@@ -510,14 +510,17 @@ model VendorApplication {
 }
 
 model Lead {
-  id        String   @id @default(cuid())
-  name      String?
-  phone     String?
-  email     String?
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  name        String?
+  phone       String?
+  email       String?
+  clerkUserId String?
+  createdAt   DateTime @default(now())
 
   tasks       Task[]
   experiences Experience[]
+
+  @@index([clerkUserId])
 }
 
 model Task {

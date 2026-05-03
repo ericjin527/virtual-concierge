@@ -115,6 +115,7 @@ export const api = {
     selectedServices?: string[];
     name: string;
     phone: string;
+    clerkUserId?: string;
   }) => apiFetch('/travel-butler/intake', { method: 'POST', body: JSON.stringify(data) }),
 
   reviseTravelPlan: (experienceId: string, messages: unknown[], message: string, currentPlan: unknown) =>

@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useAuth } from '@clerk/nextjs';
 import { api } from '../../lib/api';
 
 const SERVICES = [
@@ -39,6 +40,7 @@ const labelStyle: React.CSSProperties = {
 type Route = 'pick' | 'delegation-form' | 'services-form';
 
 export default function TravelPage() {
+  const { userId } = useAuth();
   const [route, setRoute] = useState<Route>('pick');
   const [selected, setSelected] = useState<string[]>([]);
   const [destination, setDestination] = useState('');
@@ -75,6 +77,7 @@ export default function TravelPage() {
         selectedServices: intakeMode === 'specific_services' ? selected : undefined,
         name: name.trim(),
         phone: phone.trim(),
+        ...(userId ? { clerkUserId: userId } : {}),
       }) as { experienceId: string };
       window.location.href = `/travel/plan-preview/${result.experienceId}`;
     } catch {

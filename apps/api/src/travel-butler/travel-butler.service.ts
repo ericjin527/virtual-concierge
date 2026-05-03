@@ -96,6 +96,7 @@ export interface IntakeDto {
   selectedServices?: string[];
   name: string;
   phone: string;
+  clerkUserId?: string;
 }
 
 @Injectable()
@@ -175,7 +176,7 @@ export class TravelButlerService {
 
   async createIntake(dto: IntakeDto): Promise<{ experienceId: string }> {
     const lead = await prisma.lead.create({
-      data: { name: dto.name, phone: dto.phone },
+      data: { name: dto.name, phone: dto.phone, ...(dto.clerkUserId ? { clerkUserId: dto.clerkUserId } : {}) },
     });
 
     const experience = await prisma.experience.create({
