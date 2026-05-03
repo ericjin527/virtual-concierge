@@ -85,7 +85,7 @@ export default function HomePage() {
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
           backgroundClip: 'text',
         }}>
-          Your personal glam team,<br />wherever you travel.
+          Pack less. Look iconic.<br />Your AI-powered destination shoot.
         </h1>
 
         <p className="hero-sub" style={{
@@ -106,7 +106,7 @@ export default function HomePage() {
           }}>
             Plan your shoot →
           </a>
-          <p style={{ fontSize: '0.78rem', color: MUTED }}>Free to submit · No signup required</p>
+          <p style={{ fontSize: '0.78rem', color: MUTED }}>Free to submit</p>
         </div>
       </section>
 
