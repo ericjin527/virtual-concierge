@@ -79,7 +79,7 @@ export default function MyTasksPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
             {filtered.map(task => {
-              const st = STATUS_CONFIG[task.status] ?? STATUS_CONFIG.accepted;
+              const st = STATUS_CONFIG[task.status] ?? { label: 'Unknown', bg: '#f3f4f6', color: '#6b7280' };
               return (
                 <a key={task.id} href={`/expert/my-tasks/${task.id}`} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', color: 'inherit' }}>
                   <span style={{ fontSize: '1.2rem' }}>{CATEGORY_ICONS[task.category] ?? '📋'}</span>
