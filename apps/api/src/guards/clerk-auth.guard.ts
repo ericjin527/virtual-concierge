@@ -1,5 +1,5 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
-import { verifyToken } from '@clerk/backend';
+import { createClerkClient } from '@clerk/backend';
 
 @Injectable()
 export class ClerkAuthGuard implements CanActivate {
@@ -8,13 +8,19 @@ export class ClerkAuthGuard implements CanActivate {
     const token = (req.headers['authorization'] as string)?.replace('Bearer ', '');
     if (!token) throw new UnauthorizedException('Missing auth token');
 
+    const secretKey = process.env.CLERK_SECRET_KEY;
+    if (!secretKey) {
+      console.error('[ClerkAuthGuard] CLERK_SECRET_KEY is not set');
+      throw new UnauthorizedException('Server misconfiguration');
+    }
+
     try {
-      const payload = await verifyToken(token, {
-        secretKey: process.env.CLERK_SECRET_KEY!,
-      });
+      const clerk = createClerkClient({ secretKey });
+      const payload = await clerk.verifyToken(token);
       req.clerkUserId = payload.sub;
       return true;
-    } catch {
+    } catch (err) {
+      console.error('[ClerkAuthGuard] Token verification failed:', err);
       throw new UnauthorizedException('Invalid auth token');
     }
   }
