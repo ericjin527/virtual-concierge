@@ -71,7 +71,7 @@ export default function ExpertDetailPage() {
     <div style={{ color: '#991b1b', padding: '3rem 0', fontSize: '0.88rem' }}>Expert not found.</div>
   );
 
-  const st = STATUS_STYLE[expert.status] ?? STATUS_STYLE.pending;
+  const st = STATUS_STYLE[expert.status] ?? { bg: '#fffbeb', color: '#92400e', label: 'Pending approval' };
 
   return (
     <div>

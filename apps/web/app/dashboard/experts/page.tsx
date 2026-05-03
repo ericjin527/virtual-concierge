@@ -104,7 +104,7 @@ export default function ExpertsAdminPage() {
       {!loading && experts.length > 0 && (
         <div style={{ background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 10, overflow: 'hidden' }}>
           {experts.map((ex, i) => {
-            const st = STATUS_STYLE[ex.status] ?? STATUS_STYLE.pending;
+            const st = STATUS_STYLE[ex.status] ?? { bg: '#fffbeb', color: '#92400e', label: 'Pending' };
             return (
               <a key={ex.id} href={`/dashboard/experts/${ex.id}`} style={{
                 display: 'flex', alignItems: 'center', gap: '1rem',
