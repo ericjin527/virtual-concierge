@@ -60,7 +60,7 @@ export default function ExpertDashboard() {
           <div>
             <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>Hey, {expert?.name?.split(' ')[0]} 👋</div>
             <div style={{ color: '#6b7280', fontSize: '0.85rem', marginTop: 2 }}>
-              {expert?.cities?.join(', ')} · {expert?.categories?.map(c => CATEGORY_ICONS[c]).join(' ')}
+              {expert?.cities?.join(', ')} · {expert?.categories?.map(c => CATEGORY_ICONS[c] ?? '').join(' ')}
             </div>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>

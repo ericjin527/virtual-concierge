@@ -59,7 +59,7 @@ export default function TaskDetailPage() {
     <div style={{ fontFamily: 'system-ui, sans-serif', padding: '3rem', textAlign: 'center', color: '#b91c1c' }}>Task not found.</div>
   );
 
-  const st = STATUS_CONFIG[task.status] ?? STATUS_CONFIG.new;
+  const st = STATUS_CONFIG[task.status] ?? { label: 'Unknown', bg: '#f3f4f6', color: '#6b7280' };
   const title = task.intakeBrief.title ?? task.category.replace(/_/g, ' ');
   const icon = CATEGORY_ICONS[task.category] ?? '📋';
 

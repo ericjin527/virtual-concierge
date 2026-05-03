@@ -17,7 +17,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   local_guide: 'Guide', photographer: 'Photography', private_chef: 'Chef',
   cleaner: 'Cleaning', florist: 'Florist', family_helper: 'Family', party_helper: 'Events',
 };
-const ALL_CATEGORIES = Object.entries(CATEGORY_LABELS).map(([v, l]) => ({ value: v, label: `${CATEGORY_ICONS[v]} ${l}` }));
+const ALL_CATEGORIES = Object.entries(CATEGORY_LABELS).map(([v, l]) => ({ value: v, label: `${CATEGORY_ICONS[v] ?? ''} ${l}` }));
 
 export default function ExpertJobsPage() {
   const expertApi = useExpertApi();
