@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
 import { prisma } from '@repo/db';
 
+// These are the expert category names the AI uses in its JSON output.
+// They match GlamExpertCategory enum values.
 const VALID_CATEGORIES = [
   'photographer', 'makeup_artist', 'hair_stylist', 'wardrobe_stylist',
   'cultural_outfit_partner', 'creative_director', 'photo_editor',
@@ -10,6 +12,7 @@ const VALID_CATEGORIES = [
 
 const ALL_CATEGORIES = VALID_CATEGORIES.join(', ');
 
+// Maps intake service IDs → AI category names
 const SERVICE_CATEGORY_MAP: Record<string, string> = {
   photography:        'photographer',
   makeup:             'makeup_artist',
@@ -21,6 +24,35 @@ const SERVICE_CATEGORY_MAP: Record<string, string> = {
   video_reel:         'video_creator',
   location_scouting:  'local_coordinator',
   transport:          'driver',
+};
+
+// Task.category is the old ExpertCategory DB enum — must use a valid value.
+// Task.glamCategory stores the real glam category.
+const GLAM_TO_LEGACY_CATEGORY: Record<string, string> = {
+  photographer:            'photographer',
+  makeup_artist:           'errand_helper',
+  hair_stylist:            'errand_helper',
+  wardrobe_stylist:        'errand_helper',
+  cultural_outfit_partner: 'errand_helper',
+  creative_director:       'errand_helper',
+  photo_editor:            'errand_helper',
+  video_creator:           'errand_helper',
+  local_coordinator:       'local_guide',
+  driver:                  'driver',
+};
+
+// Maps AI expert category names → GlamTaskCategory enum values
+const GLAM_EXPERT_TO_TASK_CATEGORY: Record<string, string> = {
+  photographer:            'photography',
+  makeup_artist:           'makeup',
+  hair_stylist:            'hair',
+  wardrobe_stylist:        'styling',
+  cultural_outfit_partner: 'cultural_outfit',
+  creative_director:       'creative_direction',
+  photo_editor:            'photo_editing',
+  video_creator:           'video_reel',
+  local_coordinator:       'location_scouting',
+  driver:                  'transport',
 };
 
 // Used by the legacy chat-based flow (mid-trip butler)
@@ -152,12 +184,15 @@ export class TravelButlerService {
 
       if (Array.isArray(brief.tasks)) {
         for (const t of brief.tasks) {
-          const cat = VALID_CATEGORIES.find(c => c === t.category) ?? 'errand_helper';
+          const expertCat: string = VALID_CATEGORIES.find(c => c === t.category) ?? 'errand_helper';
+          const legacyCat = GLAM_TO_LEGACY_CATEGORY[expertCat] ?? 'errand_helper';
+          const glamCat = GLAM_EXPERT_TO_TASK_CATEGORY[expertCat] ?? undefined;
           await tx.task.create({
             data: {
               experienceId: experience.id,
               leadId: lead.id,
-              category: cat,
+              category: legacyCat as any,
+              glamCategory: glamCat as any ?? undefined,
               intakeBrief: { title: t.title, description: t.description, day: t.day, time: t.time },
               status: 'new',
             },
@@ -300,12 +335,15 @@ Do NOT add restaurant, hotel, sightseeing, or generic tourism tasks.`;
     await prisma.$transaction(async (tx: any) => {
       if (Array.isArray(plan.tasks)) {
         for (const t of plan.tasks) {
-          const cat = VALID_CATEGORIES.find(c => c === t.category) ?? 'errand_helper';
+          const expertCat: string = VALID_CATEGORIES.find(c => c === t.category) ?? 'errand_helper';
+          const legacyCat = GLAM_TO_LEGACY_CATEGORY[expertCat] ?? 'errand_helper';
+          const glamCat = GLAM_EXPERT_TO_TASK_CATEGORY[expertCat] ?? undefined;
           await tx.task.create({
             data: {
               experienceId,
               leadId: experience.leadId,
-              category: cat,
+              category: legacyCat as any,
+              glamCategory: glamCat as any ?? undefined,
               intakeBrief: { title: t.title, description: t.description, day: t.day, time: t.time },
               status: 'new',
             },
