@@ -154,7 +154,7 @@ export default function ExpertTaskDetailPage() {
           </button>
         )}
 
-        {task.status === 'in_progress' && task.status !== 'completed' && (
+        {task.status === 'in_progress' && (
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '1.5rem' }}>
             <div style={{ fontWeight: 700, marginBottom: '1rem' }}>Submit your deliverable</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
