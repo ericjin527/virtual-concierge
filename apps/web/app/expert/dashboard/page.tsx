@@ -10,11 +10,12 @@ const CATEGORY_ICONS: Record<string, string> = {
   driver: '🚗', restaurant_expert: '🍽️', errand_helper: '📦', local_guide: '🗺️',
   photographer: '📷', private_chef: '👨‍🍳', cleaner: '🧹', florist: '💐', family_helper: '👨‍👧', party_helper: '🎉',
 };
+const DEFAULT_STATUS = { bg: '#fef3c7', color: '#92400e', label: 'Open' };
 const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }> = {
   accepted:    { bg: '#dbeafe', color: '#1d4ed8', label: 'Accepted' },
   in_progress: { bg: '#ede9fe', color: '#6d28d9', label: 'In Progress' },
   completed:   { bg: '#d1fae5', color: '#065f46', label: 'Complete' },
-  new:         { bg: '#fef3c7', color: '#92400e', label: 'Open' },
+  new:         DEFAULT_STATUS,
 };
 
 export default function ExpertDashboard() {
@@ -102,7 +103,7 @@ export default function ExpertDashboard() {
               No active tasks. <a href="/expert/jobs" style={{ color: '#374151', fontWeight: 600 }}>Browse open jobs →</a>
             </div>
           ) : active.map(t => {
-            const st = STATUS_COLORS[t.status] ?? STATUS_COLORS.new;
+            const st = STATUS_COLORS[t.status] ?? DEFAULT_STATUS;
             return (
               <a key={t.id} href={`/expert/my-tasks/${t.id}`} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 1.25rem', borderBottom: '1px solid #f9fafb', textDecoration: 'none', color: 'inherit' }}>
                 <span style={{ fontSize: '1.1rem' }}>{CATEGORY_ICONS[t.category] ?? '📋'}</span>

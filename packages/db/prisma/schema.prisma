@@ -469,6 +469,7 @@ model Expert {
   insuranceVerified   Boolean          @default(false)
   backgroundChecked   Boolean          @default(false)
   isVerified          Boolean          @default(false)
+  isAvailable         Boolean          @default(true)
   diagnosticFee       Float?
   languages           String[]         @default(["en"])
   rating              Float?
