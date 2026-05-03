@@ -34,14 +34,28 @@ interface Experience {
 interface ChatMessage { role: 'user' | 'assistant'; content: string }
 
 const CATEGORY_ICONS: Record<string, string> = {
-  driver: '🚗', restaurant_expert: '🍽️', errand_helper: '📦', local_guide: '🗺️',
-  photographer: '📷', private_chef: '👨‍🍳', cleaner: '🧹', florist: '💐',
-  family_helper: '👨‍👧', party_helper: '🎉',
+  photographer:            '📷',
+  makeup_artist:           '💄',
+  hair_stylist:            '💇',
+  wardrobe_stylist:        '👗',
+  cultural_outfit_partner: '👘',
+  creative_director:       '🎨',
+  photo_editor:            '🖼️',
+  video_creator:           '🎬',
+  local_coordinator:       '📍',
+  driver:                  '🚗',
 };
 const CATEGORY_LABELS: Record<string, string> = {
-  driver: 'Transport', restaurant_expert: 'Restaurant', errand_helper: 'Errand',
-  local_guide: 'Guide', photographer: 'Photo', private_chef: 'Chef',
-  cleaner: 'Clean', florist: 'Florist', family_helper: 'Family', party_helper: 'Events',
+  photographer:            'Photography',
+  makeup_artist:           'Makeup',
+  hair_stylist:            'Hair',
+  wardrobe_stylist:        'Styling',
+  cultural_outfit_partner: 'Outfit Rental',
+  creative_director:       'Creative Direction',
+  photo_editor:            'Photo Editing',
+  video_creator:           'Video',
+  local_coordinator:       'Location',
+  driver:                  'Transport',
 };
 
 function getDaysFromPlan(plan: Plan): string[] {
@@ -61,7 +75,7 @@ export default function PlanPreviewPage() {
 
   // Chat state
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'assistant', content: "Your plan is ready! Feel free to remove any tasks, or tell me what you'd like to change — I'll update the plan instantly." },
+    { role: 'assistant', content: "Your shoot plan is ready! Feel free to remove tasks, or tell me what to change — glam style, shoot location, timing, or anything else." },
   ]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
@@ -204,7 +218,7 @@ export default function PlanPreviewPage() {
           <div className="plan-panel">
             <div style={{ marginBottom: '1.25rem' }}>
               <h1 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0 }}>
-                {experience?.city ? `${experience.city} Trip Plan` : 'Your Trip Plan'}
+                {experience?.city ? `${experience.city} Shoot Plan` : 'Your Shoot Plan'}
               </h1>
               <p style={{ color: '#6b7280', margin: '0.25rem 0 0', fontSize: '0.88rem' }}>
                 {experience?.dates ?? `${experience?.startDate} – ${experience?.endDate}`}
@@ -281,7 +295,7 @@ export default function PlanPreviewPage() {
 
             <div style={{ marginTop: '1.25rem', padding: '1rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, textAlign: 'center' }}>
               <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '0.75rem' }}>
-                Happy with your plan? Confirming sends these tasks to local experts.
+                Happy with your plan? Confirming sends these tasks to our local glam + photography team.
               </div>
               <button
                 onClick={confirmPlan}
@@ -327,7 +341,7 @@ export default function PlanPreviewPage() {
 
             {/* Suggestion chips */}
             <div style={{ padding: '0.5rem 0.75rem', borderTop: '1px solid #f3f4f6', display: 'flex', gap: '0.4rem', flexWrap: 'wrap', flexShrink: 0 }}>
-              {['Add a photography session', 'Remove all transport tasks', 'Make day 2 more relaxed'].map(chip => (
+              {['Add a video reel task', 'Switch to soft glam makeup', 'Move shoot to golden hour'].map(chip => (
                 <button key={chip} onClick={() => { setChatInput(chip); }} style={{
                   padding: '3px 10px', borderRadius: 99, border: '1px solid #e5e7eb',
                   background: '#f9fafb', fontSize: '0.75rem', color: '#374151', cursor: 'pointer',
@@ -343,7 +357,7 @@ export default function PlanPreviewPage() {
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }}
-                placeholder="e.g. Add a wine bar on day 3..."
+                placeholder="e.g. Add a kimono rental on day 2..."
                 disabled={chatLoading}
                 style={{
                   flex: 1, padding: '0.55rem 0.75rem', border: '1px solid #e5e7eb',

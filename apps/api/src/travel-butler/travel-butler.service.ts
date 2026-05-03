@@ -3,44 +3,39 @@ import OpenAI from 'openai';
 import { prisma } from '@repo/db';
 
 const VALID_CATEGORIES = [
-  'driver','restaurant_expert','errand_helper','local_guide',
-  'photographer','private_chef','cleaner','florist','family_helper','party_helper',
+  'photographer', 'makeup_artist', 'hair_stylist', 'wardrobe_stylist',
+  'cultural_outfit_partner', 'creative_director', 'photo_editor',
+  'video_creator', 'local_coordinator', 'driver',
 ] as const;
 
 const ALL_CATEGORIES = VALID_CATEGORIES.join(', ');
 
 const SERVICE_CATEGORY_MAP: Record<string, string> = {
-  hotel:       'errand_helper',
-  restaurant:  'restaurant_expert',
-  sightseeing: 'local_guide',
-  transport:   'driver',
-  bar:         'local_guide',
-  nightclub:   'errand_helper',
-  errand:      'errand_helper',
-  photography: 'photographer',
-  local_guide: 'local_guide',
-  family:      'family_helper',
-  business:    'errand_helper',
-  emergency:   'errand_helper',
+  photography:        'photographer',
+  makeup:             'makeup_artist',
+  hair:               'hair_stylist',
+  wardrobe_styling:   'wardrobe_stylist',
+  cultural_outfit:    'cultural_outfit_partner',
+  creative_direction: 'creative_director',
+  photo_editing:      'photo_editor',
+  video_reel:         'video_creator',
+  location_scouting:  'local_coordinator',
+  transport:          'driver',
 };
 
 // Used by the legacy chat-based flow (mid-trip butler)
-const buildChatSystemPrompt = (context: string) => `You are a Local Experience Butler.
+const buildChatSystemPrompt = (context: string) => `You are a Destination Glam + Shoot Butler — a creative director and coordinator who plans magazine-style editorial photoshoots for travelers.
 
 ${context}
 
-Your job in this conversation: collect city, dates, name, and phone in ONE message. Once you have all four, immediately output the JSON plan below — do not ask any other questions.
+Your job: collect city, dates, occasion/vibe, name, and phone in ONE message. Once you have all five, output the JSON plan below.
 
-When you have all four fields, respond with a warm 1-sentence confirmation and then output the JSON plan.
-
-IMPORTANT RULES FOR THE PLAN:
-1. Count the exact number of days from the dates given (e.g. May 29–June 3 = 6 days: May 29, 30, 31, June 1, 2, 3).
-2. Generate an agenda entry AND at least one task for EVERY single day of the trip — no days skipped.
-3. Use real calendar dates in the day labels (e.g. "Day 1 — Thu May 29", "Day 2 — Fri May 30").
-4. STRICT: Only create tasks for the categories listed in the context. Do NOT add any other service or category.
-5. Spread the allowed services across all days.
-
-Output format:
+PLAN RULES:
+1. Count exact days from the dates (e.g. May 29–June 3 = 6 days).
+2. Focus tasks on the shoot day(s) — not every day needs a task, but every shoot day must have glam + photo tasks together.
+3. Use real calendar dates in day labels (e.g. "Day 1 — Thu May 29").
+4. STRICT: Only create tasks for the categories listed in the context. No restaurants, no generic tourism.
+5. Think like a creative director: group glam + photo tasks on the same day, suggest neighborhoods and shoot timing.
 
 \`\`\`json
 {
@@ -49,39 +44,41 @@ Output format:
   "customerPhone": "...",
   "city": "...",
   "dates": "...",
-  "planSummary": "2-3 sentence overview of what will be coordinated across the full trip",
+  "planSummary": "2-3 sentence creative overview: shoot concept, glam direction, neighborhood, vibe",
   "agenda": [
-    { "day": "Day 1 — Thu May 29", "items": ["Arrive, driver meets at airport", "Dinner at local izakaya"] }
+    { "day": "Day 1 — Thu May 29", "items": ["Glam session at hotel, 2 hours before shoot", "Golden hour street editorial in Shibuya"] }
   ],
   "tasks": [
-    { "title": "Airport pickup", "description": "Ground transport from airport on arrival", "category": "driver", "day": "Day 1 — Thu May 29", "time": "arrival" }
+    { "title": "Makeup + Hair", "description": "Soft glam for street editorial — natural base, defined eyes", "category": "makeup_artist", "day": "Day 1 — Thu May 29", "time": "14:00" },
+    { "title": "Street Editorial Shoot", "description": "2-hour editorial session in Shibuya at golden hour", "category": "photographer", "day": "Day 1 — Thu May 29", "time": "16:30" }
   ]
 }
 \`\`\``;
 
 // Used by the new form-based intake flow
-const buildPlanSystemPrompt = (context: string) => `You are a Local Experience Butler planning assistant.
+const buildPlanSystemPrompt = (context: string) => `You are a Destination Glam + Shoot Butler — a creative director and coordinator who plans magazine-style editorial photoshoots for travelers.
 
 ${context}
 
-You will receive structured trip information. Immediately generate a complete day-by-day plan. Output ONLY the JSON block below — no other text.
+You will receive structured trip information. Immediately generate a complete shoot plan. Output ONLY the JSON block below — no other text.
 
 RULES:
-1. Count the exact number of days from startDate to endDate INCLUSIVE (e.g. Jun 1 to Jun 5 = 5 days).
-2. Generate an agenda entry AND at least one task for EVERY single day — no days skipped.
-3. Use real calendar dates in day labels (e.g. "Day 1 — Mon Jun 1", "Day 2 — Tue Jun 2").
-4. STRICT: Only create tasks for the categories listed in the context. Do NOT invent tasks for other categories.
-5. Spread allowed services across all days naturally.
+1. Count exact days from startDate to endDate INCLUSIVE.
+2. Focus on shoot day(s) — group glam + photography tasks on the same day(s). Not every day needs a task.
+3. Use real calendar dates in day labels (e.g. "Day 1 — Mon Jun 1").
+4. STRICT: Only create tasks for the categories listed in the context. No restaurants, no generic tourism.
+5. Think like a creative director: suggest shoot concept, glam direction, best neighborhood for the vibe, and time of day.
+6. For full delegation, suggest 1–2 shoot days spread across the trip with appropriate glam + photo + optional styling tasks.
 
 \`\`\`json
 {
-  "planSummary": "2-3 sentence overview of what will be coordinated across the full trip",
+  "planSummary": "2-3 sentence creative overview: shoot concept, glam direction, neighborhood, vibe, deliverables",
   "agenda": [
-    { "day": "Day 1 — Mon Jun 1", "items": ["Arrive, driver meets at airport", "Welcome dinner in the city"] }
+    { "day": "Day 2 — Tue Jun 2", "items": ["Glam session: soft editorial makeup + hair", "Street editorial shoot in Harajuku at golden hour"] }
   ],
   "tasks": [
-    { "title": "Airport pickup", "description": "Arrange ground transport from airport on arrival", "category": "driver", "day": "Day 1 — Mon Jun 1", "time": "arrival" },
-    { "title": "Welcome dinner reservation", "description": "Book dinner at a well-regarded local restaurant", "category": "restaurant_expert", "day": "Day 1 — Mon Jun 1", "time": "dinner" }
+    { "title": "Makeup + Hair", "description": "Soft glam — natural base, defined eyes, loose waves", "category": "makeup_artist", "day": "Day 2 — Tue Jun 2", "time": "15:00" },
+    { "title": "Editorial Street Shoot", "description": "2-hour shoot in Harajuku, street and boutique backdrops", "category": "photographer", "day": "Day 2 — Tue Jun 2", "time": "17:00" }
   ]
 }
 \`\`\``;
@@ -220,11 +217,11 @@ export class TravelButlerService {
         )].join(', ') || ALL_CATEGORIES;
 
     const context = isFullDelegation
-      ? `This is a FULL DELEGATION request. Generate a comprehensive, well-rounded travel plan. Use any relevant categories from: ${allowedCategories}.`
+      ? `This is a FULL DELEGATION glam + shoot request. Design 1–2 shoot days with glam, photography, and relevant styling/creative tasks. Available expert categories: ${allowedCategories}.`
       : `User selected ONLY these services: ${selectedServiceIds.join(', ')}. STRICT: only create tasks with these categories: ${allowedCategories}. Do NOT add tasks for any other category.`;
 
     const numDays = this.countDays(experience.startDate ?? '', experience.endDate ?? '');
-    const userMessage = `Plan a ${numDays}-day trip for ${experience.travelers} ${experience.travelers === 1 ? 'person' : 'people'} to ${experience.city} from ${experience.startDate} to ${experience.endDate}${experience.budget ? `, budget level: ${experience.budget}` : ''}.`;
+    const userMessage = `Plan a destination glam + shoot experience for ${experience.travelers} ${experience.travelers === 1 ? 'person' : 'people'} visiting ${experience.city} from ${experience.startDate} to ${experience.endDate} (${numDays} days)${experience.budget ? `. Budget tier: ${experience.budget}` : ''}.`;
 
     const completion = await this.openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -257,14 +254,17 @@ export class TravelButlerService {
     message: string,
     currentPlan: any,
   ): Promise<{ reply: string; revisedPlan?: any }> {
-    const systemPrompt = `You are a Local Experience Butler helping a traveler refine their trip plan.
+    const systemPrompt = `You are a Destination Glam + Shoot Butler helping a traveler refine their shoot plan. Think like a creative director.
 
 Current plan (JSON):
 ${JSON.stringify(currentPlan, null, 2)}
 
+Valid task categories: photographer, makeup_artist, hair_stylist, wardrobe_stylist, cultural_outfit_partner, creative_director, photo_editor, video_creator, local_coordinator, driver.
+
 When the traveler asks to add, remove, or change tasks or agenda items, output a revised plan as a \`\`\`json block using the EXACT same structure as above.
-When answering a question or asking for clarification, respond conversationally — no JSON needed.
-Always acknowledge the change in 1–2 sentences before or after the JSON block.`;
+When answering questions, respond conversationally — no JSON needed.
+Always acknowledge the change in 1–2 sentences before or after the JSON block.
+Do NOT add restaurant, hotel, sightseeing, or generic tourism tasks.`;
 
     const completion = await this.openai.chat.completions.create({
       model: 'gpt-4o-mini',

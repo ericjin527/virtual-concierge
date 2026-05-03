@@ -4,22 +4,22 @@ import { useAuth } from '@clerk/nextjs';
 import { api } from '../../lib/api';
 
 const SERVICES = [
-  { id: 'restaurant',  icon: '🍽️', label: 'Restaurant' },
-  { id: 'transport',   icon: '🚗', label: 'Transport' },
-  { id: 'sightseeing', icon: '🗺️', label: 'Sightseeing' },
-  { id: 'photography', icon: '📷', label: 'Photography' },
-  { id: 'hotel',       icon: '🏨', label: 'Hotel Help' },
-  { id: 'bar',         icon: '🍸', label: 'Bar & Nightlife' },
-  { id: 'local_guide', icon: '🧭', label: 'Local Guide' },
-  { id: 'family',      icon: '👨‍👧', label: 'Family Support' },
-  { id: 'errand',      icon: '📦', label: 'Errands' },
-  { id: 'emergency',   icon: '🆘', label: 'Emergency Help' },
+  { id: 'photography',       icon: '📷', label: 'Photography' },
+  { id: 'makeup',            icon: '💄', label: 'Makeup' },
+  { id: 'hair',              icon: '💇', label: 'Hair Styling' },
+  { id: 'wardrobe_styling',  icon: '👗', label: 'Wardrobe Styling' },
+  { id: 'cultural_outfit',   icon: '👘', label: 'Kimono / Outfit Rental' },
+  { id: 'creative_direction',icon: '🎨', label: 'Creative Direction' },
+  { id: 'photo_editing',     icon: '🖼️', label: 'Photo Editing' },
+  { id: 'video_reel',        icon: '🎬', label: 'Video Reel' },
+  { id: 'location_scouting', icon: '📍', label: 'Location Scouting' },
+  { id: 'transport',         icon: '🚗', label: 'Transport' },
 ];
 
 const BUDGET_OPTIONS = [
-  { value: 'budget',  label: 'Budget',    sub: 'Affordable picks' },
-  { value: 'mid',     label: 'Mid-range', sub: 'Best value' },
-  { value: 'luxury',  label: 'Luxury',    sub: 'Premium experience' },
+  { value: 'budget',  label: 'Essential',  sub: '$300–$600' },
+  { value: 'mid',     label: 'Signature',  sub: '$600–$1,500' },
+  { value: 'luxury',  label: 'Editorial',  sub: '$1,500+' },
 ];
 
 const A = '#1a1714';
@@ -90,7 +90,7 @@ export default function TravelPage() {
     <>
       <div>
         <label style={labelStyle}>Destination *</label>
-        <input style={inputStyle} value={destination} onChange={e => setDestination(e.target.value)} placeholder="e.g. San Francisco" />
+        <input style={inputStyle} value={destination} onChange={e => setDestination(e.target.value)} placeholder="e.g. Tokyo, Paris, New York" />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
@@ -205,10 +205,10 @@ export default function TravelPage() {
           <>
             <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
               <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: A, letterSpacing: '-0.025em', fontFamily: 'Georgia, serif', margin: '0 0 0.6rem' }}>
-                Plan your next experience
+                Your destination shoot, planned
               </h1>
               <p style={{ color: MUTED, fontSize: '0.9rem', lineHeight: 1.7, margin: 0 }}>
-                Trusted locals handle every detail — restaurants, drivers, guides and more.
+                Tell us your trip and empty time slots. AI designs the look, glam plan, shoot route, and expert lineup.
               </p>
             </div>
 
@@ -219,10 +219,10 @@ export default function TravelPage() {
                 transition: 'border-color 0.15s',
               }}>
                 <div style={{ fontWeight: 700, fontSize: '0.95rem', color: A, marginBottom: 4, fontFamily: 'Georgia, serif' }}>
-                  Plan everything for me
+                  Design my full shoot experience
                 </div>
                 <div style={{ color: MUTED, fontSize: '0.84rem', lineHeight: 1.6 }}>
-                  Tell us your dates and budget — we'll design a full itinerary with the best local experts
+                  Tell us your destination, dates, and occasion — AI builds your complete glam + shoot plan
                 </div>
               </button>
 
@@ -231,16 +231,16 @@ export default function TravelPage() {
                 background: '#fff', cursor: 'pointer', textAlign: 'left',
               }}>
                 <div style={{ fontWeight: 700, fontSize: '0.95rem', color: A, marginBottom: 4, fontFamily: 'Georgia, serif' }}>
-                  I need specific services
+                  I know what I need
                 </div>
                 <div style={{ color: MUTED, fontSize: '0.84rem', lineHeight: 1.6 }}>
-                  Select exactly what you need — restaurant reservations, a driver, a photographer, and more
+                  Select specific services — photographer, makeup, hair, styling, kimono rental, and more
                 </div>
               </button>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', marginTop: '2rem' }}>
-              {['Vetted experts', 'Bay Area coverage', 'No commitment required'].map(t => (
+              {['Vetted local experts', 'Tokyo & beyond', 'No commitment required'].map(t => (
                 <span key={t} style={{ fontSize: '0.76rem', color: FAINT }}>✓ {t}</span>
               ))}
             </div>
@@ -254,7 +254,7 @@ export default function TravelPage() {
               ← Back
             </button>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: A, letterSpacing: '-0.02em', fontFamily: 'Georgia, serif', margin: '0 0 1.5rem' }}>
-              Full itinerary planning
+              Design my full shoot experience
             </h2>
             <div style={{ background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 12, padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               {commonFields('full_delegation')}
@@ -275,7 +275,7 @@ export default function TravelPage() {
             {/* Service tiles */}
             <div style={{ background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 12, padding: '1.25rem', marginBottom: '0.75rem' }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 700, color: FAINT, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: '0.85rem' }}>
-                What do you need help with?
+                Which services do you need?
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '0.45rem' }}>
                 {SERVICES.map(s => (
