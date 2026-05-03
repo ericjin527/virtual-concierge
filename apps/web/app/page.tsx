@@ -181,7 +181,10 @@ export default function HomePage() {
 
       <footer style={{ borderTop: '1px solid #2d2926', background: '#1a1714', padding: '1.5rem 2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
         <span style={{ color: '#6f6560', fontSize: '0.78rem', fontFamily: 'Georgia, serif' }}>Local Butler</span>
-        <span style={{ color: '#4a4440', fontSize: '0.76rem' }}>Bay Area pilot · 2025</span>
+        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+          <span style={{ color: '#4a4440', fontSize: '0.76rem' }}>Bay Area pilot · 2025</span>
+          <a href="/dashboard" style={{ color: '#4a4440', fontSize: '0.76rem', textDecoration: 'none' }}>Admin</a>
+        </div>
       </footer>
     </div>
   );
