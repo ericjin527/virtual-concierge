@@ -84,7 +84,7 @@ export default function ExpertDetailPage() {
       <div style={{ background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 12, padding: '1.5rem', marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
           <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#f2ede6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}>
-            {CATEGORY_ICONS[expert.categories?.[0]] ?? '👤'}
+            {CATEGORY_ICONS[expert.categories?.[0] ?? ''] ?? '👤'}
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>

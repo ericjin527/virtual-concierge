@@ -118,7 +118,7 @@ export default function ExpertsAdminPage() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '1rem', flexShrink: 0,
                 }}>
-                  {CATEGORY_ICONS[ex.categories?.[0]] ?? '👤'}
+                  {CATEGORY_ICONS[ex.categories?.[0] ?? ''] ?? '👤'}
                 </div>
 
                 <div style={{ flex: 1, minWidth: 0 }}>
