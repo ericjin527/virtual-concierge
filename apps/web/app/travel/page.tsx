@@ -205,7 +205,7 @@ export default function TravelPage() {
           <>
             <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
               <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: A, letterSpacing: '-0.025em', fontFamily: 'Georgia, serif', margin: '0 0 0.6rem' }}>
-                Plan your Bay Area experience
+                Plan your next experience
               </h1>
               <p style={{ color: MUTED, fontSize: '0.9rem', lineHeight: 1.7, margin: 0 }}>
                 Trusted locals handle every detail — restaurants, drivers, guides and more.
