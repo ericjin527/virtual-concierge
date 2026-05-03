@@ -8,18 +8,25 @@ export interface ExpertProfileDto {
   phone?: string;
   cities?: string[];
   categories?: string[];
+  glamCategory?: string;
+  destinationIds?: string[];
+  areaIds?: string[];
   languages?: string[];
+  metadata?: Record<string, any>;
   isAvailable?: boolean;
   maxConcurrentJobs?: number;
 }
 
 @Injectable()
 export class ExpertsService {
-  findAll(category?: string, status?: string) {
+  findAll(opts: { category?: string; glamCategory?: string; destinationId?: string; status?: string } = {}) {
+    const { category, glamCategory, destinationId, status } = opts;
     return prisma.expert.findMany({
       where: {
         ...(status && status !== 'all' ? { status: status as any } : status === 'all' ? {} : { status: 'approved' }),
         ...(category ? { category: category as any } : {}),
+        ...(glamCategory ? { glamCategory: glamCategory as any } : {}),
+        ...(destinationId ? { destinationIds: { has: destinationId } } : {}),
       },
       orderBy: { createdAt: 'desc' },
       include: { _count: { select: { tasks: true } } },
@@ -51,7 +58,11 @@ export class ExpertsService {
           ...(data.phone ? { phone: data.phone } : {}),
           ...(data.cities ? { cities: data.cities } : {}),
           ...(data.categories ? { categories: data.categories as any } : {}),
+          ...(data.glamCategory !== undefined ? { glamCategory: data.glamCategory as any } : {}),
+          ...(data.destinationIds ? { destinationIds: data.destinationIds } : {}),
+          ...(data.areaIds ? { areaIds: data.areaIds } : {}),
           ...(data.languages ? { languages: data.languages } : {}),
+          ...(data.metadata !== undefined ? { metadata: data.metadata } : {}),
           ...(data.isAvailable !== undefined ? { isAvailable: data.isAvailable } : {}),
           ...(data.maxConcurrentJobs !== undefined ? { maxConcurrentJobs: data.maxConcurrentJobs } : {}),
         },
@@ -63,12 +74,16 @@ export class ExpertsService {
         name: data.name ?? 'New Expert',
         phone: data.phone ?? '',
         email: `clerk_${clerkUserId}@pending.localbutler.app`,
-        category: (data.categories?.[0] ?? 'errand_helper') as any,
-        categories: (data.categories ?? []) as any,
+        category: 'errand_helper' as any,
+        categories: [] as any,
+        glamCategory: data.glamCategory as any ?? null,
+        destinationIds: data.destinationIds ?? [],
+        areaIds: data.areaIds ?? [],
         cities: data.cities ?? [],
         bio: data.bio,
         photoUrl: data.photoUrl,
         languages: data.languages ?? ['en'],
+        metadata: data.metadata ?? null,
         isAvailable: data.isAvailable ?? true,
         maxConcurrentJobs: data.maxConcurrentJobs ?? 2,
         serviceArea: data.cities?.[0] ?? '',

@@ -23,8 +23,13 @@ export class ExpertsController {
   // ── Public / Admin ───────────────────────────────────────────────────────────
 
   @Get()
-  findAll(@Query('category') category?: string, @Query('status') status?: string) {
-    return this.expertsService.findAll(category, status);
+  findAll(
+    @Query('category') category?: string,
+    @Query('glamCategory') glamCategory?: string,
+    @Query('destinationId') destinationId?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.expertsService.findAll({ category, glamCategory, destinationId, status });
   }
 
   @Get(':id')

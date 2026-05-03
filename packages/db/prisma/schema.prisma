@@ -450,6 +450,57 @@ enum MessageRole {
   butler
 }
 
+// ─── Glam Vertical Enums ─────────────────────────────────────────────────────
+
+enum GlamExpertCategory {
+  photographer
+  makeup_artist
+  hair_stylist
+  wardrobe_stylist
+  rental_partner
+  cultural_outfit_partner
+  photo_editor
+  video_creator
+  local_coordinator
+  transport_partner
+}
+
+enum GlamTaskCategory {
+  photography
+  makeup
+  hair
+  styling
+  wardrobe_rental
+  cultural_outfit
+  creative_direction
+  photo_editing
+  video_reel
+  location_scouting
+  transport
+  concierge_support
+}
+
+enum DestinationStatus {
+  draft
+  active
+  paused
+}
+
+enum ProposalStatus {
+  invited
+  accepted
+  declined
+  selected
+  rejected
+}
+
+enum PackageOptionStatus {
+  draft
+  presented
+  selected
+  rejected
+}
+
 model Expert {
   id                  String           @id @default(cuid())
   clerkUserId         String?          @unique
@@ -478,15 +529,21 @@ model Expert {
   maxConcurrentJobs   Int              @default(2)
   status              ExpertStatus     @default(pending)
   badges              String[]
+  glamCategory        GlamExpertCategory?
+  destinationIds      String[]         @default([])
+  areaIds             String[]         @default([])
+  metadata            Json?
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
 
-  tasks    Task[]
-  quotes   TaskQuote[]
-  bookings TaskBooking[]
-  reviews  ExpertReview[]
+  tasks     Task[]
+  quotes    TaskQuote[]
+  bookings  TaskBooking[]
+  reviews   ExpertReview[]
+  proposals ExpertProposal[]
 
   @@index([category, status])
+  @@index([glamCategory, status])
   @@index([serviceArea])
 }
 
@@ -534,25 +591,33 @@ model Task {
   urgency      String?
   status       TaskStatus     @default(new)
   source       TaskSource     @default(web)
-  claimedAt    DateTime?
-  completedAt  DateTime?
-  cancelReason String?
-  deliverable  Json?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  claimedAt     DateTime?
+  completedAt   DateTime?
+  cancelReason  String?
+  deliverable   Json?
+  glamCategory  GlamTaskCategory?
+  destinationId String?
+  dueAt         DateTime?
+  metadata      Json?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
-  lead       Lead?          @relation(fields: [leadId], references: [id])
-  expert     Expert?        @relation(fields: [expertId], references: [id])
-  experience Experience?    @relation(fields: [experienceId], references: [id])
-  quotes     TaskQuote[]
-  booking    TaskBooking?
-  reviews    ExpertReview[]
-  messages   TaskMessage[]
+  lead        Lead?          @relation(fields: [leadId], references: [id])
+  expert      Expert?        @relation(fields: [expertId], references: [id])
+  experience  Experience?    @relation(fields: [experienceId], references: [id])
+  destination Destination?   @relation(fields: [destinationId], references: [id])
+  quotes      TaskQuote[]
+  booking     TaskBooking?
+  reviews     ExpertReview[]
+  messages    TaskMessage[]
+  proposals   ExpertProposal[]
 
   @@index([status])
   @@index([expertId])
   @@index([category, status])
+  @@index([glamCategory, status])
   @@index([experienceId])
+  @@index([destinationId])
 }
 
 model Experience {
@@ -573,17 +638,22 @@ model Experience {
   hotelBase        String?
   planDraft        Json?
   aiBrief          Json             @default("{}")
+  destinationId    String?
+  metadata         Json?
   status           ExperienceStatus @default(intake)
   confirmedAt      DateTime?
   summaryEmail     String?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
-  lead  Lead?  @relation(fields: [leadId], references: [id])
-  tasks Task[]
+  lead           Lead?           @relation(fields: [leadId], references: [id])
+  destination    Destination?    @relation(fields: [destinationId], references: [id])
+  tasks          Task[]
+  packageOptions PackageOption[]
 
   @@index([type, status])
   @@index([status])
+  @@index([destinationId])
 }
 
 model TaskQuote {
@@ -638,4 +708,79 @@ model TaskMessage {
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
+}
+
+// ─── Glam Vertical Models ────────────────────────────────────────────────────
+
+model Destination {
+  id        String            @id @default(cuid())
+  name      String
+  country   String
+  timezone  String
+  currency  String
+  languages String[]          @default([])
+  status    DestinationStatus @default(draft)
+  metadata  Json?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  areas       DestinationArea[]
+  experiences Experience[]
+  tasks       Task[]
+
+  @@index([status])
+  @@index([country])
+}
+
+model DestinationArea {
+  id            String   @id @default(cuid())
+  destinationId String
+  name          String
+  tags          String[] @default([])
+  metadata      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@index([destinationId])
+}
+
+model ExpertProposal {
+  id                 String         @id @default(cuid())
+  taskId             String
+  expertId           String
+  status             ProposalStatus @default(invited)
+  proposedPrice      Float?
+  currency           String?
+  note               String?
+  portfolioSampleUrl String?
+  availableStart     DateTime?
+  availableEnd       DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  expert Expert @relation(fields: [expertId], references: [id])
+
+  @@unique([taskId, expertId])
+  @@index([taskId, status])
+  @@index([expertId, status])
+}
+
+model PackageOption {
+  id              String              @id @default(cuid())
+  experienceId    String
+  title           String
+  description     String?
+  price           Float
+  currency        String
+  status          PackageOptionStatus @default(draft)
+  includedTaskIds String[]            @default([])
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  experience Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  @@index([experienceId, status])
 }

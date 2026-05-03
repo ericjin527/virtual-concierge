@@ -21,6 +21,8 @@ import { TravelButlerModule } from './travel-butler/travel-butler.module';
 import { ExperiencesModule } from './experiences/experiences.module';
 import { ExpertTasksModule } from './expert-tasks/expert-tasks.module';
 import { AccountModule } from './account/account.module';
+import { DestinationsModule } from './destinations/destinations.module';
+import { ProposalsModule } from './proposals/proposals.module';
 
 @Module({
   controllers: [HealthController],
@@ -46,6 +48,8 @@ import { AccountModule } from './account/account.module';
     ExperiencesModule,
     ExpertTasksModule,
     AccountModule,
+    DestinationsModule,
+    ProposalsModule,
   ],
 })
 export class AppModule {}
