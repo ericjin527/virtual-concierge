@@ -203,7 +203,7 @@ export default function ExpertOnboardingPage() {
               <div>
                 <label style={labelStyle}>Languages</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                  {[['en', 'English'], ['ja', '日本語'], ['zh', '中文'], ['ko', '한국어'], ['fr', 'Français']].map(([code, label]) => (
+                  {([['en', 'English'], ['ja', '日本語'], ['zh', '中文'], ['ko', '한국어'], ['fr', 'Français']] as [string, string][]).map(([code, label]) => (
                     <button key={code} type="button" onClick={() => toggleLanguage(code)} style={{
                       padding: '5px 14px', borderRadius: 99, fontSize: '0.82rem', cursor: 'pointer',
                       background: form.languages.includes(code) ? A : '#fff',
