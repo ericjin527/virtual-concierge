@@ -126,6 +126,10 @@ export interface IntakeDto {
   name: string;
   phone: string;
   clerkUserId?: string;
+  occasion?: string;
+  vibes?: string[];
+  emptyTimeSlots?: string;
+  hotelArea?: string;
 }
 
 @Injectable()
@@ -251,9 +255,22 @@ export class TravelButlerService {
           selectedServiceIds.map(s => SERVICE_CATEGORY_MAP[s]).filter(Boolean),
         )].join(', ') || ALL_CATEGORIES;
 
-    const context = isFullDelegation
-      ? `This is a FULL DELEGATION glam + shoot request. Design 1–2 shoot days with glam, photography, and relevant styling/creative tasks. Available expert categories: ${allowedCategories}.`
-      : `User selected ONLY these services: ${selectedServiceIds.join(', ')}. STRICT: only create tasks with these categories: ${allowedCategories}. Do NOT add tasks for any other category.`;
+    const payload = (experience.intakePayload ?? {}) as Record<string, any>;
+    const occasion: string = payload['occasion'] ?? '';
+    const vibes: string[] = Array.isArray(payload['vibes']) ? payload['vibes'] : [];
+    const emptyTimeSlots: string = payload['emptyTimeSlots'] ?? '';
+    const hotelArea: string = payload['hotelArea'] ?? '';
+
+    const contextLines = [
+      isFullDelegation
+        ? `This is a FULL DELEGATION glam + shoot request. Design 1–2 shoot days with glam, photography, and relevant styling/creative tasks. Available expert categories: ${allowedCategories}.`
+        : `User selected ONLY these services: ${selectedServiceIds.join(', ')}. STRICT: only create tasks with these categories: ${allowedCategories}. Do NOT add tasks for any other category.`,
+      occasion ? `Occasion: ${occasion}.` : '',
+      vibes.length > 0 ? `Desired vibe: ${vibes.join(', ')}.` : '',
+      emptyTimeSlots ? `Customer's free time slots for glam + shoot: ${emptyTimeSlots}.` : '',
+      hotelArea ? `Hotel area / base neighborhood: ${hotelArea}.` : '',
+    ].filter(Boolean);
+    const context = contextLines.join(' ');
 
     const numDays = this.countDays(experience.startDate ?? '', experience.endDate ?? '');
     const userMessage = `Plan a destination glam + shoot experience for ${experience.travelers} ${experience.travelers === 1 ? 'person' : 'people'} visiting ${experience.city} from ${experience.startDate} to ${experience.endDate} (${numDays} days)${experience.budget ? `. Budget tier: ${experience.budget}` : ''}.`;

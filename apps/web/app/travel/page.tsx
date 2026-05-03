@@ -3,82 +3,156 @@ import { useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { api } from '../../lib/api';
 
+// ── Design tokens ──────────────────────────────────────────────────────────────
+const P = '#7C3AED';          // purple primary
+const P_BG = 'rgba(124,58,237,0.07)';
+const P_BORDER = 'rgba(124,58,237,0.35)';
+const TEXT = '#111827';
+const MUTED = '#6B7280';
+const BORDER = '#E5E7EB';
+const CARD_BG = '#FFFFFF';
+const FIELD_BG = '#F3F4F6';
+
+// ── Constants ──────────────────────────────────────────────────────────────────
+const DESTINATIONS = [
+  'Tokyo, Japan',
+  'Paris, France',
+  'Seoul, South Korea',
+  'New York, USA',
+  'Shanghai, China',
+  'Los Angeles, USA',
+  'Other',
+];
+
+const OCCASIONS = [
+  { id: 'solo_travel',  label: 'Solo travel',           icon: '📷' },
+  { id: 'couple',       label: 'Couple / Date',          icon: '🤍' },
+  { id: 'proposal',     label: 'Proposal',               icon: '✨' },
+  { id: 'birthday',     label: 'Birthday / Celebration', icon: '🎉' },
+  { id: 'creator',      label: 'Creator / Content',      icon: '📸' },
+  { id: 'business',     label: 'Business / Conference',  icon: '💼' },
+  { id: 'friend_group', label: 'Friend group',           icon: '👥' },
+];
+
+const VIBES = [
+  'Street editorial', 'Soft glam', 'Luxury / High fashion',
+  'Cultural / Traditional', 'Neon / Nightlife', 'Natural / Lifestyle',
+  'Cinematic', 'Editorial fashion',
+];
+
 const SERVICES = [
-  { id: 'photography',       icon: '📷', label: 'Photography' },
-  { id: 'makeup',            icon: '💄', label: 'Makeup' },
-  { id: 'hair',              icon: '💇', label: 'Hair Styling' },
-  { id: 'wardrobe_styling',  icon: '👗', label: 'Wardrobe Styling' },
-  { id: 'cultural_outfit',   icon: '👘', label: 'Kimono / Outfit Rental' },
-  { id: 'creative_direction',icon: '🎨', label: 'Creative Direction' },
-  { id: 'photo_editing',     icon: '🖼️', label: 'Photo Editing' },
-  { id: 'video_reel',        icon: '🎬', label: 'Video Reel' },
-  { id: 'location_scouting', icon: '📍', label: 'Location Scouting' },
-  { id: 'transport',         icon: '🚗', label: 'Transport' },
+  { id: 'photography',        label: 'Photography' },
+  { id: 'makeup',             label: 'Makeup' },
+  { id: 'hair',               label: 'Hair styling' },
+  { id: 'wardrobe_styling',   label: 'Wardrobe styling' },
+  { id: 'cultural_outfit',    label: 'Kimono / yukata rental' },
+  { id: 'creative_direction', label: 'Creative direction' },
+  { id: 'photo_editing',      label: 'Photo editing' },
+  { id: 'video_reel',         label: 'Video content' },
 ];
 
 const BUDGET_OPTIONS = [
-  { value: 'budget',  label: 'Essential',  sub: '$300–$600' },
-  { value: 'mid',     label: 'Signature',  sub: '$600–$1,500' },
-  { value: 'luxury',  label: 'Editorial',  sub: '$1,500+' },
+  { value: 'budget',  label: 'Essential',  range: '$300–$600' },
+  { value: 'mid',     label: 'Signature',  range: '$600–$1,500' },
+  { value: 'luxury',  label: 'Editorial',  range: '$1,500+' },
 ];
 
-const A = '#1a1714';
-const MUTED = '#6f6560';
-const FAINT = '#a8a29e';
-const BORDER = '#e8e2da';
+const STEP_TITLES = ['Trip details', 'Occasion & vibe', 'Services & budget', 'Contact info'];
+const TOTAL = 4;
 
-const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '0.65rem 0.85rem', border: `1px solid ${BORDER}`,
-  borderRadius: 9, fontSize: '0.9rem', boxSizing: 'border-box',
-  background: '#fff', outline: 'none', color: A, fontFamily: 'system-ui, sans-serif',
+// ── Shared styles ──────────────────────────────────────────────────────────────
+const fieldStyle: React.CSSProperties = {
+  width: '100%', padding: '0.75rem 1rem', background: FIELD_BG,
+  border: '1.5px solid transparent', borderRadius: 10, fontSize: '0.93rem',
+  color: TEXT, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit',
+  appearance: 'none' as const,
 };
 const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: '0.72rem', fontWeight: 700,
-  color: MUTED, marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.07em',
+  display: 'block', fontSize: '0.875rem', fontWeight: 600, color: TEXT, marginBottom: 6,
+};
+const sectionTitle: React.CSSProperties = {
+  fontSize: '0.75rem', fontWeight: 700, color: MUTED,
+  letterSpacing: '0.06em', textTransform: 'uppercase' as const, marginBottom: 10,
 };
 
-type Route = 'pick' | 'delegation-form' | 'services-form';
-
+// ── Component ──────────────────────────────────────────────────────────────────
 export default function TravelPage() {
   const { userId } = useAuth();
-  const [route, setRoute] = useState<Route>('pick');
-  const [selected, setSelected] = useState<string[]>([]);
-  const [destination, setDestination] = useState('');
+  const [step, setStep] = useState(1);
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  // Step 1 — Trip details
+  const [destination, setDestination] = useState('Tokyo, Japan');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [numPeople, setNumPeople] = useState(2);
+  const [emptySlots, setEmptySlots] = useState('');
+  const [hotelArea, setHotelArea] = useState('');
+  const [travelers, setTravelers] = useState('1');
+
+  // Step 2 — Occasion & vibe
+  const [occasion, setOccasion] = useState('');
+  const [vibes, setVibes] = useState<string[]>([]);
+  const [inspiration, setInspiration] = useState('');
+
+  // Step 3 — Services & budget
+  const [services, setServices] = useState<string[]>([]);
   const [budget, setBudget] = useState('mid');
+
+  // Step 4 — Contact
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
 
-  function toggleService(id: string) {
-    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  function toggleArr(arr: string[], setArr: (v: string[]) => void, val: string) {
+    setArr(arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val]);
   }
 
-  async function submit(intakeMode: 'full_delegation' | 'specific_services') {
-    setError('');
-    if (!destination.trim()) return setError('Please enter a destination.');
-    if (!startDate || !endDate) return setError('Please enter your travel dates.');
-    if (new Date(endDate) < new Date(startDate)) return setError('End date must be after start date.');
-    if (!name.trim()) return setError('Please enter your name.');
-    if (!phone.trim()) return setError('Please enter your phone number.');
-    if (intakeMode === 'specific_services' && selected.length === 0)
-      return setError('Please select at least one service.');
+  function validateStep(): string {
+    if (step === 1) {
+      if (!destination) return 'Please select a destination.';
+      if (!startDate || !endDate) return 'Please enter your travel dates.';
+      if (new Date(endDate) < new Date(startDate)) return 'Departure must be after arrival.';
+    }
+    if (step === 2) {
+      if (!occasion) return 'Please select an occasion.';
+    }
+    if (step === 4) {
+      if (!name.trim()) return 'Please enter your name.';
+      if (!phone.trim()) return 'Please enter your phone number.';
+    }
+    return '';
+  }
 
+  function next() {
+    const err = validateStep();
+    if (err) { setError(err); return; }
+    setError('');
+    setStep(s => s + 1);
+  }
+  function prev() { setError(''); setStep(s => s - 1); }
+
+  async function submit() {
+    const err = validateStep();
+    if (err) { setError(err); return; }
+    setError('');
     setSubmitting(true);
     try {
+      const intakeMode = services.length > 0 ? 'specific_services' : 'full_delegation';
       const result = await api.travelIntake({
         intakeMode,
-        destination: destination.trim(),
-        startDate, endDate, numPeople,
-        budget: intakeMode === 'full_delegation' ? budget : undefined,
-        selectedServices: intakeMode === 'specific_services' ? selected : undefined,
+        destination,
+        startDate, endDate,
+        numPeople: parseInt(travelers),
+        budget,
+        selectedServices: services.length > 0 ? services : undefined,
         name: name.trim(),
         phone: phone.trim(),
+        occasion,
+        vibes,
+        emptyTimeSlots: emptySlots.trim() || undefined,
+        hotelArea: hotelArea.trim() || undefined,
         ...(userId ? { clerkUserId: userId } : {}),
-      }) as { experienceId: string };
+      } as any) as { experienceId: string };
       window.location.href = `/travel/plan-preview/${result.experienceId}`;
     } catch {
       setError('Something went wrong. Please try again.');
@@ -86,217 +160,315 @@ export default function TravelPage() {
     }
   }
 
-  const commonFields = (mode: 'full_delegation' | 'specific_services') => (
-    <>
-      <div>
-        <label style={labelStyle}>Destination *</label>
-        <input style={inputStyle} value={destination} onChange={e => setDestination(e.target.value)} placeholder="e.g. Tokyo, Paris, New York" />
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-        <div>
-          <label style={labelStyle}>Arrival date *</label>
-          <input type="date" style={inputStyle} value={startDate} onChange={e => setStartDate(e.target.value)} />
-        </div>
-        <div>
-          <label style={labelStyle}>Departure date *</label>
-          <input type="date" style={inputStyle} value={endDate} onChange={e => setEndDate(e.target.value)} />
-        </div>
-      </div>
-
-      <div>
-        <label style={labelStyle}>Travelers *</label>
-        <div style={{ display: 'flex', gap: '0.4rem' }}>
-          {[1, 2, 3, 4, 5].map(n => (
-            <button key={n} type="button" onClick={() => setNumPeople(n)} style={{
-              width: 44, height: 44, borderRadius: 9,
-              border: numPeople === n ? `2px solid ${A}` : `1px solid ${BORDER}`,
-              background: numPeople === n ? A : '#fff',
-              color: numPeople === n ? '#fff' : A,
-              fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem',
-            }}>{n}</button>
-          ))}
-          <button type="button" onClick={() => setNumPeople(6)} style={{
-            padding: '0 0.85rem', height: 44, borderRadius: 9,
-            border: numPeople === 6 ? `2px solid ${A}` : `1px solid ${BORDER}`,
-            background: numPeople === 6 ? A : '#fff',
-            color: numPeople === 6 ? '#fff' : A,
-            fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem',
-          }}>6+</button>
-        </div>
-      </div>
-
-      {mode === 'full_delegation' && (
-        <div>
-          <label style={labelStyle}>Budget *</label>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {BUDGET_OPTIONS.map(b => (
-              <button key={b.value} type="button" onClick={() => setBudget(b.value)} style={{
-                flex: 1, padding: '0.65rem 0.5rem', borderRadius: 9, cursor: 'pointer', textAlign: 'center',
-                border: budget === b.value ? `2px solid ${A}` : `1px solid ${BORDER}`,
-                background: budget === b.value ? A : '#fff',
-                color: budget === b.value ? '#fff' : A,
-              }}>
-                <div style={{ fontWeight: 700, fontSize: '0.84rem' }}>{b.label}</div>
-                <div style={{ fontSize: '0.7rem', opacity: 0.65, marginTop: 2 }}>{b.sub}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-        <div>
-          <label style={labelStyle}>Your name *</label>
-          <input style={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="First Last" />
-        </div>
-        <div>
-          <label style={labelStyle}>WhatsApp / Phone *</label>
-          <input type="tel" style={inputStyle} value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 415 000 0000" />
-        </div>
-      </div>
-
-      <button
-        onClick={() => submit(mode)}
-        disabled={submitting || (mode === 'specific_services' && selected.length === 0)}
-        style={{
-          padding: '0.9rem', background: A, color: '#fff', border: 'none', borderRadius: 9,
-          fontWeight: 700, fontSize: '0.95rem',
-          cursor: (submitting || (mode === 'specific_services' && selected.length === 0)) ? 'not-allowed' : 'pointer',
-          opacity: (submitting || (mode === 'specific_services' && selected.length === 0)) ? 0.5 : 1,
-          marginTop: 4,
-        }}
-      >
-        {submitting ? 'Building your plan...' : mode === 'full_delegation' ? 'Generate my plan →' : `Build plan for ${selected.length || 0} service${selected.length !== 1 ? 's' : ''} →`}
-      </button>
-    </>
-  );
+  const pct = ((step - 1) / (TOTAL - 1)) * 100;
 
   return (
-    <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', color: A, minHeight: '100vh', background: '#faf9f6' }}>
+    <div style={{
+      minHeight: '100vh', fontFamily: 'system-ui, -apple-system, sans-serif', color: TEXT,
+      background: 'radial-gradient(ellipse at 20% 0%, #FDE8F0 0%, #FFF7ED 45%, #FFFBEA 100%)',
+    }}>
+      <style>{`
+        select { -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px !important; }
+        input[type=date]::-webkit-calendar-picker-indicator { opacity: 0.5; }
+        .occ-card:hover { border-color: ${P_BORDER} !important; }
+        .svc-tile:hover { border-color: ${P_BORDER} !important; }
+        .vibe-pill:hover { border-color: ${P} !important; color: ${P} !important; }
+      `}</style>
 
       {/* Nav */}
       <nav style={{
-        borderBottom: `1px solid ${BORDER}`, padding: '1rem 2.5rem',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff',
+        padding: '1rem 2rem', display: 'flex', justifyContent: 'space-between',
+        alignItems: 'center', background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(8px)',
+        borderBottom: `1px solid ${BORDER}`, position: 'sticky', top: 0, zIndex: 10,
       }}>
-        <a href="/" style={{ fontWeight: 800, fontSize: '1.05rem', textDecoration: 'none', color: A, fontFamily: 'Georgia, serif', letterSpacing: '-0.02em' }}>
+        <a href="/" style={{ fontWeight: 800, fontSize: '1.05rem', textDecoration: 'none', color: P, fontFamily: 'system-ui', letterSpacing: '-0.03em' }}>
           Local Butler
         </a>
-        <a href="/expert" style={{
-          background: A, color: '#fff', padding: '0.4rem 1rem',
-          borderRadius: 8, textDecoration: 'none', fontSize: '0.82rem', fontWeight: 600,
-        }}>
-          For experts
+        <a href="/expert" style={{ fontSize: '0.85rem', color: MUTED, textDecoration: 'none', fontWeight: 500 }}>
+          Expert portal
         </a>
       </nav>
 
-      <div style={{ maxWidth: 600, margin: '0 auto', padding: '3rem 1.5rem' }}>
+      <div style={{ maxWidth: 660, margin: '0 auto', padding: '2.5rem 1.25rem 4rem' }}>
+
+        {/* Progress bar */}
+        <div style={{ marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: P }}>Step {step} of {TOTAL}</span>
+            <span style={{ fontSize: '0.8rem', color: MUTED }}>{STEP_TITLES[step - 1]}</span>
+          </div>
+          <div style={{ height: 5, borderRadius: 99, background: 'rgba(124,58,237,0.12)', overflow: 'hidden' }}>
+            <div style={{
+              height: '100%', borderRadius: 99,
+              background: 'linear-gradient(to right, #7C3AED, #A855F7, #EC4899, #FB7185)',
+              width: `${pct === 0 ? 8 : pct}%`,
+              transition: 'width 0.35s ease',
+            }} />
+          </div>
+        </div>
 
         {/* Error */}
         {error && (
-          <div style={{ background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', padding: '0.75rem 1rem', borderRadius: 9, marginBottom: '1.25rem', fontSize: '0.86rem' }}>
+          <div style={{
+            background: '#FEF2F2', color: '#B91C1C', border: '1px solid #FECACA',
+            padding: '0.7rem 1rem', borderRadius: 10, marginBottom: '1.25rem', fontSize: '0.875rem',
+          }}>
             {error}
           </div>
         )}
 
-        {/* ── Route picker ── */}
-        {route === 'pick' && (
-          <>
-            <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-              <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: A, letterSpacing: '-0.025em', fontFamily: 'Georgia, serif', margin: '0 0 0.6rem' }}>
-                Your destination shoot, planned
-              </h1>
-              <p style={{ color: MUTED, fontSize: '0.9rem', lineHeight: 1.7, margin: 0 }}>
-                Tell us your trip and empty time slots. AI designs the look, glam plan, shoot route, and expert lineup.
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <button onClick={() => setRoute('delegation-form')} style={{
-                padding: '1.5rem', borderRadius: 12, border: `1px solid ${BORDER}`,
-                background: '#fff', cursor: 'pointer', textAlign: 'left',
-                transition: 'border-color 0.15s',
-              }}>
-                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: A, marginBottom: 4, fontFamily: 'Georgia, serif' }}>
-                  Design my full shoot experience
-                </div>
-                <div style={{ color: MUTED, fontSize: '0.84rem', lineHeight: 1.6 }}>
-                  Tell us your destination, dates, and occasion — AI builds your complete glam + shoot plan
-                </div>
-              </button>
-
-              <button onClick={() => setRoute('services-form')} style={{
-                padding: '1.5rem', borderRadius: 12, border: `1px solid ${BORDER}`,
-                background: '#fff', cursor: 'pointer', textAlign: 'left',
-              }}>
-                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: A, marginBottom: 4, fontFamily: 'Georgia, serif' }}>
-                  I know what I need
-                </div>
-                <div style={{ color: MUTED, fontSize: '0.84rem', lineHeight: 1.6 }}>
-                  Select specific services — photographer, makeup, hair, styling, kimono rental, and more
-                </div>
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', marginTop: '2rem' }}>
-              {['Vetted local experts', 'Tokyo & beyond', 'No commitment required'].map(t => (
-                <span key={t} style={{ fontSize: '0.76rem', color: FAINT }}>✓ {t}</span>
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* ── Full Delegation Form ── */}
-        {route === 'delegation-form' && (
-          <>
-            <button onClick={() => setRoute('pick')} style={{ background: 'none', border: 'none', color: MUTED, cursor: 'pointer', fontSize: '0.84rem', marginBottom: '1.5rem', padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-              ← Back
-            </button>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: A, letterSpacing: '-0.02em', fontFamily: 'Georgia, serif', margin: '0 0 1.5rem' }}>
-              Design my full shoot experience
+        {/* ── Step 1: Trip details ── */}
+        {step === 1 && (
+          <div style={{ background: CARD_BG, borderRadius: 16, border: `1px solid ${BORDER}`, padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: P, margin: '0 0 0.35rem', letterSpacing: '-0.02em' }}>
+              Your destination shoot, planned
             </h2>
-            <div style={{ background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 12, padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              {commonFields('full_delegation')}
-            </div>
-          </>
-        )}
+            <p style={{ color: MUTED, fontSize: '0.9rem', margin: '0 0 1.75rem', lineHeight: 1.6 }}>
+              Tell us your trip and empty time slots. AI designs the look, glam plan, shoot route, and expert lineup.
+            </p>
 
-        {/* ── Specific Services Form ── */}
-        {route === 'services-form' && (
-          <>
-            <button onClick={() => setRoute('pick')} style={{ background: 'none', border: 'none', color: MUTED, cursor: 'pointer', fontSize: '0.84rem', marginBottom: '1.5rem', padding: 0 }}>
-              ← Back
-            </button>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: A, letterSpacing: '-0.02em', fontFamily: 'Georgia, serif', margin: '0 0 1rem' }}>
-              Select your services
-            </h2>
-
-            {/* Service tiles */}
-            <div style={{ background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 12, padding: '1.25rem', marginBottom: '0.75rem' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: FAINT, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: '0.85rem' }}>
-                Which services do you need?
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div>
+                <label style={labelStyle}>Destination *</label>
+                <select style={fieldStyle} value={destination} onChange={e => setDestination(e.target.value)}>
+                  {DESTINATIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '0.45rem' }}>
-                {SERVICES.map(s => (
-                  <button key={s.id} type="button" onClick={() => toggleService(s.id)} style={{
-                    padding: '0.6rem 0.75rem', borderRadius: 9, cursor: 'pointer',
-                    border: selected.includes(s.id) ? `2px solid ${A}` : `1px solid ${BORDER}`,
-                    background: selected.includes(s.id) ? A : '#fff',
-                    color: selected.includes(s.id) ? '#fff' : A,
-                    fontSize: '0.82rem', fontWeight: selected.includes(s.id) ? 600 : 400,
-                    textAlign: 'left', display: 'flex', alignItems: 'center', gap: '0.45rem',
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={labelStyle}>Arrival date *</label>
+                  <input type="date" style={fieldStyle} value={startDate} onChange={e => setStartDate(e.target.value)} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Departure date *</label>
+                  <input type="date" style={fieldStyle} value={endDate} onChange={e => setEndDate(e.target.value)} />
+                </div>
+              </div>
+
+              <div>
+                <label style={labelStyle}>Empty time slots</label>
+                <textarea
+                  style={{ ...fieldStyle, minHeight: 72, resize: 'vertical' }}
+                  value={emptySlots}
+                  onChange={e => setEmptySlots(e.target.value)}
+                  placeholder="e.g. May 14, 3pm-7pm | May 16, morning"
+                />
+                <p style={{ fontSize: '0.78rem', color: MUTED, margin: '5px 0 0' }}>When are you free for glam + shoot during your trip?</p>
+              </div>
+
+              <div>
+                <label style={labelStyle}>Hotel area / neighborhood</label>
+                <input style={fieldStyle} value={hotelArea} onChange={e => setHotelArea(e.target.value)} placeholder="e.g. Shibuya, Ginza, Harajuku" />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Number of travelers *</label>
+                <select style={fieldStyle} value={travelers} onChange={e => setTravelers(e.target.value)}>
+                  {['1 person', '2 people', '3 people', '4 people', '5 people', '6+ people'].map((l, i) => (
+                    <option key={i} value={String(i + 1)}>{l}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '2rem' }}>
+              <button onClick={() => window.location.href = '/'} style={{
+                flex: 1, padding: '0.85rem', borderRadius: 10, border: `1.5px solid ${BORDER}`,
+                background: 'transparent', color: P, fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer',
+              }}>Cancel</button>
+              <button onClick={next} style={{
+                flex: 2, padding: '0.85rem', borderRadius: 10, border: 'none',
+                background: `linear-gradient(135deg, ${P}, #A855F7)`, color: '#fff',
+                fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
+              }}>Continue</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Step 2: Occasion & Vibe ── */}
+        {step === 2 && (
+          <div style={{ background: CARD_BG, borderRadius: 16, border: `1px solid ${BORDER}`, padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: P, margin: '0 0 0.35rem', letterSpacing: '-0.02em' }}>
+              {"What's the occasion?"}
+            </h2>
+            <p style={{ color: MUTED, fontSize: '0.9rem', margin: '0 0 1.75rem', lineHeight: 1.6 }}>
+              Help us understand the vibe and style you're going for
+            </p>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <div style={sectionTitle}>Occasion *</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.6rem' }}>
+                {OCCASIONS.map(o => (
+                  <button key={o.id} className="occ-card" type="button" onClick={() => setOccasion(o.id)} style={{
+                    padding: '1rem 0.75rem', borderRadius: 12, cursor: 'pointer', textAlign: 'left',
+                    border: occasion === o.id ? `1.5px solid ${P}` : `1.5px solid ${BORDER}`,
+                    background: occasion === o.id ? P_BG : '#fff',
+                    display: 'flex', flexDirection: 'column', gap: 6, transition: 'all 0.12s',
                   }}>
-                    {s.icon} {s.label}
+                    <span style={{ fontSize: '1.2rem' }}>{o.icon}</span>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 600, color: occasion === o.id ? P : TEXT, lineHeight: 1.3 }}>{o.label}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            <div style={{ background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 12, padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              {commonFields('specific_services')}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <div style={sectionTitle}>Desired vibe * (select all that apply)</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                {VIBES.map(v => (
+                  <button key={v} className="vibe-pill" type="button" onClick={() => toggleArr(vibes, setVibes, v)} style={{
+                    padding: '0.45rem 1rem', borderRadius: 99, fontSize: '0.85rem', cursor: 'pointer',
+                    border: vibes.includes(v) ? `1.5px solid ${P}` : `1.5px solid ${BORDER}`,
+                    background: vibes.includes(v) ? P : '#fff',
+                    color: vibes.includes(v) ? '#fff' : TEXT,
+                    fontWeight: vibes.includes(v) ? 600 : 400, transition: 'all 0.12s',
+                    display: 'flex', alignItems: 'center', gap: 5,
+                  }}>
+                    {vibes.includes(v) && <span style={{ fontSize: '0.7rem' }}>✓</span>}
+                    {v}
+                  </button>
+                ))}
+              </div>
             </div>
-          </>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={labelStyle}>Inspiration links <span style={{ fontWeight: 400, color: MUTED }}>(optional)</span></label>
+              <textarea
+                style={{ ...fieldStyle, minHeight: 80, resize: 'vertical' }}
+                value={inspiration}
+                onChange={e => setInspiration(e.target.value)}
+                placeholder="Pinterest boards, Instagram posts, or reference photos"
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button onClick={prev} style={{
+                flex: 1, padding: '0.85rem', borderRadius: 10, border: `1.5px solid ${BORDER}`,
+                background: 'transparent', color: P, fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer',
+              }}>Previous</button>
+              <button onClick={next} style={{
+                flex: 2, padding: '0.85rem', borderRadius: 10, border: 'none',
+                background: `linear-gradient(135deg, ${P}, #A855F7)`, color: '#fff',
+                fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
+              }}>Continue</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Step 3: Services & Budget ── */}
+        {step === 3 && (
+          <div style={{ background: CARD_BG, borderRadius: 16, border: `1px solid ${BORDER}`, padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: P, margin: '0 0 0.35rem', letterSpacing: '-0.02em' }}>
+              Services & budget
+            </h2>
+            <p style={{ color: MUTED, fontSize: '0.9rem', margin: '0 0 1.75rem', lineHeight: 1.6 }}>
+              Select the services you need and your budget range
+            </p>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <div style={sectionTitle}>Services needed * (select all that apply)</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.55rem' }}>
+                {SERVICES.map(s => (
+                  <button key={s.id} className="svc-tile" type="button" onClick={() => toggleArr(services, setServices, s.id)} style={{
+                    padding: '0.85rem 1rem', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+                    border: services.includes(s.id) ? `1.5px solid ${P}` : `1.5px solid ${BORDER}`,
+                    background: services.includes(s.id) ? P_BG : '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    transition: 'all 0.12s',
+                  }}>
+                    <span style={{ fontSize: '0.88rem', fontWeight: services.includes(s.id) ? 600 : 400, color: services.includes(s.id) ? P : TEXT }}>
+                      {s.label}
+                    </span>
+                    {services.includes(s.id) && (
+                      <span style={{ width: 18, height: 18, borderRadius: '50%', background: P, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <div style={sectionTitle}>Budget range *</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.55rem' }}>
+                {BUDGET_OPTIONS.map(b => (
+                  <button key={b.value} type="button" onClick={() => setBudget(b.value)} style={{
+                    padding: '1rem 0.75rem', borderRadius: 10, cursor: 'pointer', textAlign: 'center',
+                    border: budget === b.value ? `1.5px solid ${P}` : `1.5px solid ${BORDER}`,
+                    background: budget === b.value ? P_BG : '#fff',
+                    transition: 'all 0.12s',
+                  }}>
+                    <div style={{ fontSize: '0.88rem', fontWeight: 700, color: budget === b.value ? P : TEXT, marginBottom: 3 }}>{b.label}</div>
+                    <div style={{ fontSize: '0.78rem', color: MUTED }}>{b.range}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button onClick={prev} style={{
+                flex: 1, padding: '0.85rem', borderRadius: 10, border: `1.5px solid ${BORDER}`,
+                background: 'transparent', color: P, fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer',
+              }}>Previous</button>
+              <button onClick={next} style={{
+                flex: 2, padding: '0.85rem', borderRadius: 10, border: 'none',
+                background: `linear-gradient(135deg, ${P}, #A855F7)`, color: '#fff',
+                fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
+              }}>Continue</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Step 4: Contact ── */}
+        {step === 4 && (
+          <div style={{ background: CARD_BG, borderRadius: 16, border: `1px solid ${BORDER}`, padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: P, margin: '0 0 0.35rem', letterSpacing: '-0.02em' }}>
+              Almost there
+            </h2>
+            <p style={{ color: MUTED, fontSize: '0.9rem', margin: '0 0 1.75rem', lineHeight: 1.6 }}>
+              {"We'll send your personalized shoot plan to this contact"}
+            </p>
+
+            {/* Summary */}
+            <div style={{ background: P_BG, border: `1px solid ${P_BORDER}`, borderRadius: 10, padding: '0.85rem 1rem', marginBottom: '1.5rem', fontSize: '0.85rem', color: TEXT, lineHeight: 1.7 }}>
+              <strong style={{ color: P }}>{destination}</strong>
+              {startDate && endDate && <> · {startDate} – {endDate}</>}
+              {occasion && <> · {OCCASIONS.find(o => o.id === occasion)?.label}</>}
+              {vibes.length > 0 && <> · {vibes.slice(0, 2).join(', ')}{vibes.length > 2 ? ` +${vibes.length - 2}` : ''}</>}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+              <div>
+                <label style={labelStyle}>Your name *</label>
+                <input style={fieldStyle} value={name} onChange={e => setName(e.target.value)} placeholder="First Last" />
+              </div>
+              <div>
+                <label style={labelStyle}>WhatsApp / Phone *</label>
+                <input type="tel" style={fieldStyle} value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 415 000 0000" />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.75rem' }}>
+              <button onClick={prev} style={{
+                flex: 1, padding: '0.85rem', borderRadius: 10, border: `1.5px solid ${BORDER}`,
+                background: 'transparent', color: P, fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer',
+              }}>Previous</button>
+              <button onClick={submit} disabled={submitting} style={{
+                flex: 2, padding: '0.85rem', borderRadius: 10, border: 'none',
+                background: submitting ? '#A78BFA' : `linear-gradient(135deg, ${P}, #A855F7)`,
+                color: '#fff', fontWeight: 700, fontSize: '0.95rem',
+                cursor: submitting ? 'not-allowed' : 'pointer',
+              }}>
+                {submitting ? 'Building your plan...' : 'Generate my shoot plan →'}
+              </button>
+            </div>
+
+            <p style={{ textAlign: 'center', fontSize: '0.78rem', color: MUTED, marginTop: '1rem' }}>
+              Free to submit · No commitment required
+            </p>
+          </div>
         )}
       </div>
     </div>
