@@ -86,7 +86,8 @@ export default function TravelPage() {
   const [destination, setDestination] = useState('Tokyo, Japan');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [emptySlots, setEmptySlots] = useState('');
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [flexibleDays, setFlexibleDays] = useState(false);
   const [hotelArea, setHotelArea] = useState('');
   const [travelers, setTravelers] = useState('1');
 
@@ -105,6 +106,27 @@ export default function TravelPage() {
 
   function toggleArr(arr: string[], setArr: (v: string[]) => void, val: string) {
     setArr(arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val]);
+  }
+
+  function getDaysInRange(start: string, end: string): { key: string; label: string; short: string }[] {
+    if (!start || !end) return [];
+    const days: { key: string; label: string; short: string }[] = [];
+    const cur = new Date(start + 'T00:00:00');
+    const last = new Date(end + 'T00:00:00');
+    while (cur <= last) {
+      const key = cur.toISOString().slice(0, 10);
+      const label = cur.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+      const short = cur.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      days.push({ key, label, short });
+      cur.setDate(cur.getDate() + 1);
+    }
+    return days;
+  }
+
+  function buildEmptySlots(): string | undefined {
+    if (flexibleDays) return 'flexible — any day works';
+    if (selectedDays.length === 0) return undefined;
+    return selectedDays.join(', ');
   }
 
   function validateStep(): string {
@@ -149,7 +171,7 @@ export default function TravelPage() {
         phone: phone.trim(),
         occasion,
         vibes,
-        emptyTimeSlots: emptySlots.trim() || undefined,
+        emptyTimeSlots: buildEmptySlots(),
         hotelArea: hotelArea.trim() || undefined,
         ...(userId ? { clerkUserId: userId } : {}),
       } as any) as { experienceId: string };
@@ -247,14 +269,58 @@ export default function TravelPage() {
               </div>
 
               <div>
-                <label style={labelStyle}>Empty time slots</label>
-                <textarea
-                  style={{ ...fieldStyle, minHeight: 72, resize: 'vertical' }}
-                  value={emptySlots}
-                  onChange={e => setEmptySlots(e.target.value)}
-                  placeholder="e.g. May 14, 3pm-7pm | May 16, morning"
-                />
-                <p style={{ fontSize: '0.78rem', color: MUTED, margin: '5px 0 0' }}>When are you free for glam + shoot during your trip?</p>
+                <label style={labelStyle}>Which days work for your shoot?</label>
+                {!startDate || !endDate ? (
+                  <div style={{ padding: '0.85rem 1rem', background: FIELD_BG, borderRadius: 10, fontSize: '0.875rem', color: MUTED }}>
+                    Enter your dates above to pick available days
+                  </div>
+                ) : (
+                  <div>
+                    {/* Flexible toggle */}
+                    <button
+                      type="button"
+                      onClick={() => { setFlexibleDays(f => !f); setSelectedDays([]); }}
+                      style={{
+                        width: '100%', padding: '0.75rem 1rem', borderRadius: 10,
+                        border: flexibleDays ? `1.5px solid ${P}` : `1.5px solid ${BORDER}`,
+                        background: flexibleDays ? P_BG : '#fff',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        cursor: 'pointer', marginBottom: '0.5rem', transition: 'all 0.12s',
+                      }}
+                    >
+                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: flexibleDays ? P : TEXT }}>
+                        🗓 I{"'"}m flexible — any day works
+                      </span>
+                      {flexibleDays && (
+                        <span style={{ width: 18, height: 18, borderRadius: '50%', background: P, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </span>
+                      )}
+                    </button>
+                    {/* Day pills */}
+                    {!flexibleDays && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                        {getDaysInRange(startDate, endDate).map(d => (
+                          <button
+                            key={d.key}
+                            type="button"
+                            onClick={() => toggleArr(selectedDays, setSelectedDays, d.key)}
+                            style={{
+                              padding: '0.45rem 0.85rem', borderRadius: 99, fontSize: '0.82rem', cursor: 'pointer',
+                              border: selectedDays.includes(d.key) ? `1.5px solid ${P}` : `1.5px solid ${BORDER}`,
+                              background: selectedDays.includes(d.key) ? P : '#fff',
+                              color: selectedDays.includes(d.key) ? '#fff' : TEXT,
+                              fontWeight: selectedDays.includes(d.key) ? 600 : 400,
+                              transition: 'all 0.12s',
+                            }}
+                          >
+                            {d.short}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>
