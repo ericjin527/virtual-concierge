@@ -15,13 +15,14 @@ export interface ExpertProfileDto {
 
 @Injectable()
 export class ExpertsService {
-  findAll(category?: string) {
+  findAll(category?: string, status?: string) {
     return prisma.expert.findMany({
       where: {
-        status: 'approved',
+        ...(status && status !== 'all' ? { status: status as any } : status === 'all' ? {} : { status: 'approved' }),
         ...(category ? { category: category as any } : {}),
       },
-      orderBy: { completedJobs: 'desc' },
+      orderBy: { createdAt: 'desc' },
+      include: { _count: { select: { tasks: true } } },
     });
   }
 

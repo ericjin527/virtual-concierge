@@ -79,6 +79,7 @@ export const api = {
 
   // Butler Network — Experts
   getExperts: (category?: string) => apiFetch(`/experts${category ? `?category=${category}` : ''}`),
+  getAdminExperts: (status?: string) => apiFetch(`/experts${status ? `?status=${status}` : '?status=all'}`),
   getExpert: (id: string) => apiFetch(`/experts/${id}`),
   approveExpert: (id: string) => apiFetch(`/experts/${id}/approve`, { method: 'POST' }),
   suspendExpert: (id: string) => apiFetch(`/experts/${id}/suspend`, { method: 'POST' }),
