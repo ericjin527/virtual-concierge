@@ -55,6 +55,8 @@ export class ExperiencesService {
           { status: 'plan_ready' as any },
           { city: 'tampa' }, { city: 'Tampa' },
           { city: 'hawaii' }, { city: 'Hawaii' },
+          { lead: { clerkUserId: null } },
+          { leadId: null },
         ],
       },
       select: { id: true },
