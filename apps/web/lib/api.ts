@@ -133,6 +133,10 @@ export const api = {
   confirmTravelPlan: (experienceId: string, plan: unknown) =>
     apiFetch(`/travel-butler/experiences/${experienceId}/confirm`, { method: 'POST', body: JSON.stringify({ plan }) }),
 
+  // My trips (customer, auth-gated)
+  getMyExperiences: (token: string) =>
+    apiFetch('/experiences/mine', undefined, token),
+
   // Experiences
   getExperiences: (status?: string, type?: string) =>
     apiFetch(`/experiences${status ? `?status=${status}` : ''}${type ? `${status ? '&' : '?'}type=${type}` : ''}`),

@@ -1,9 +1,16 @@
-import { Controller, Get, Patch, Param, Query, Body } from '@nestjs/common';
+import { Controller, Get, Patch, Param, Query, Body, UseGuards, Req } from '@nestjs/common';
 import { ExperiencesService } from './experiences.service';
+import { ClerkAuthGuard } from '../guards/clerk-auth.guard';
 
 @Controller('experiences')
 export class ExperiencesController {
   constructor(private readonly service: ExperiencesService) {}
+
+  @UseGuards(ClerkAuthGuard)
+  @Get('mine')
+  listMine(@Req() req: any) {
+    return this.service.listByClerkUser(req.clerkUserId);
+  }
 
   @Get()
   list(@Query('status') status?: string, @Query('type') type?: string, @Query('phone') phone?: string) {

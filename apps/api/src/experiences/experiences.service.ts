@@ -3,6 +3,14 @@ import { prisma } from '@repo/db';
 
 @Injectable()
 export class ExperiencesService {
+  listByClerkUser(clerkUserId: string) {
+    return prisma.experience.findMany({
+      where: { lead: { clerkUserId } },
+      include: { _count: { select: { tasks: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   list(status?: string, type?: string, phone?: string) {
     return prisma.experience.findMany({
       where: {
