@@ -4,42 +4,57 @@ import { prisma } from '@repo/db';
 @Injectable()
 export class ExpertTasksService {
   // Job board — open tasks, no traveler PII
-  async listOpen(category?: string, city?: string) {
+  async listOpen(glamCategory?: string, city?: string) {
     const tasks = await prisma.task.findMany({
       where: {
         status: 'new',
         expertId: null,
         experienceId: { not: null },
-        ...(category ? { category: category as any } : {}),
+        ...(glamCategory ? { glamCategory: glamCategory as any } : {}),
       },
       include: {
-        experience: { select: { city: true, dates: true, startDate: true, endDate: true, travelers: true, budget: true } },
+        experience: {
+          select: {
+            city: true, dates: true, startDate: true, endDate: true,
+            travelers: true, budget: true, occasion: true, intakePayload: true,
+          },
+        },
       },
       orderBy: { createdAt: 'asc' },
     });
 
-    // Filter by city if provided
     const filtered = city
       ? tasks.filter(t => t.experience?.city?.toLowerCase().includes(city.toLowerCase()))
       : tasks;
 
-    // Strip traveler PII
-    return filtered.map(t => ({
-      id: t.id,
-      category: t.category,
-      status: t.status,
-      urgency: t.urgency,
-      createdAt: t.createdAt,
-      intakeBrief: {
-        title: (t.intakeBrief as any).title,
-        description: (t.intakeBrief as any).description,
-        day: (t.intakeBrief as any).day,
-        time: (t.intakeBrief as any).time,
-      },
-      experience: t.experience
-        ? { city: t.experience.city, dates: t.experience.dates, startDate: t.experience.startDate, endDate: t.experience.endDate, travelers: t.experience.travelers, budget: t.experience.budget }
-        : null,
-    }));
+    return filtered.map(t => {
+      const payload = (t.experience?.intakePayload ?? {}) as Record<string, any>;
+      return {
+        id: t.id,
+        category: t.category,
+        glamCategory: t.glamCategory,
+        status: t.status,
+        urgency: t.urgency,
+        createdAt: t.createdAt,
+        intakeBrief: {
+          title: (t.intakeBrief as any).title,
+          description: (t.intakeBrief as any).description,
+          day: (t.intakeBrief as any).day,
+          time: (t.intakeBrief as any).time,
+        },
+        experience: t.experience ? {
+          city: t.experience.city,
+          dates: t.experience.dates,
+          travelers: t.experience.travelers,
+          budget: t.experience.budget,
+          occasion: t.experience.occasion,
+          hotelBase: payload['hotelArea'] ?? null,
+          metadata: {
+            desiredVibe: payload['vibes'] ?? [],
+          },
+        } : null,
+      };
+    });
   }
 
   // Atomic accept — first-come-first-served

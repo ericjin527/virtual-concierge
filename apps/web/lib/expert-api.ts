@@ -45,6 +45,15 @@ export function useExpertApi() {
     // Proposal flow
     getMyProposals: () => fetch_('/proposals/mine'),
 
+    selfSubmitProposal: (taskId: string, data: {
+      proposedPrice: number;
+      currency: string;
+      note?: string;
+      portfolioSampleUrl?: string;
+      availableStart: string;
+      availableEnd: string;
+    }) => fetch_('/proposals/self-submit', { method: 'POST', body: JSON.stringify({ taskId, ...data }) }),
+
     acceptProposal: (proposalId: string, data: {
       proposedPrice: number;
       currency: string;

@@ -8,8 +8,12 @@ export class ExpertTasksController {
 
   // Public — job board (no auth, no PII)
   @Get()
-  listOpen(@Query('category') category?: string, @Query('city') city?: string) {
-    return this.service.listOpen(category, city);
+  listOpen(
+    @Query('glamCategory') glamCategory?: string,
+    @Query('category') category?: string,
+    @Query('city') city?: string,
+  ) {
+    return this.service.listOpen(glamCategory ?? category, city);
   }
 
   // Auth-gated — my tasks

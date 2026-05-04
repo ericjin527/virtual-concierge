@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { prisma } from '@repo/db';
 
 @Injectable()
@@ -26,6 +26,41 @@ export class ProposalsService {
     });
     if (!proposal) throw new NotFoundException('Proposal not found');
     return proposal;
+  }
+
+  // Expert: self-submit a bid from the job board (creates proposal with status accepted directly)
+  async selfSubmit(taskId: string, clerkUserId: string, data: {
+    proposedPrice: number;
+    currency: string;
+    note?: string;
+    portfolioSampleUrl?: string;
+    availableStart: string;
+    availableEnd: string;
+  }) {
+    const expert = await prisma.expert.findUnique({ where: { clerkUserId } });
+    if (!expert) throw new ForbiddenException('Expert profile not found. Complete onboarding first.');
+
+    const task = await prisma.task.findUnique({ where: { id: taskId } });
+    if (!task) throw new NotFoundException('Task not found.');
+    if (task.status !== 'new') throw new ConflictException('This task is no longer available.');
+
+    return prisma.expertProposal.upsert({
+      where: { taskId_expertId: { taskId, expertId: expert.id } },
+      create: {
+        taskId, expertId: expert.id, status: 'accepted',
+        proposedPrice: data.proposedPrice, currency: data.currency,
+        note: data.note, portfolioSampleUrl: data.portfolioSampleUrl,
+        availableStart: new Date(data.availableStart),
+        availableEnd: new Date(data.availableEnd),
+      },
+      update: {
+        status: 'accepted',
+        proposedPrice: data.proposedPrice, currency: data.currency,
+        note: data.note, portfolioSampleUrl: data.portfolioSampleUrl,
+        availableStart: new Date(data.availableStart),
+        availableEnd: new Date(data.availableEnd),
+      },
+    });
   }
 
   // Admin: invite expert to a task

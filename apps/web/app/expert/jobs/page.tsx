@@ -87,13 +87,19 @@ export default function ExpertJobsPage() {
     setError('');
     setSubmitting(true);
     try {
-      // Find the proposal invitation for this task (expert was invited via admin, or we use the task directly)
-      // For now, use the task ID as a proposal ID (if direct accept is still available)
-      setToast('Proposal submitted! The admin team will review it within 24 hours.');
+      await expertApi.selfSubmitProposal(selectedJob.id, {
+        proposedPrice: Number(proposal.price),
+        currency: proposal.currency,
+        note: proposal.note || undefined,
+        portfolioSampleUrl: proposal.portfolioUrl || undefined,
+        availableStart: proposal.availableStart,
+        availableEnd: proposal.availableEnd,
+      });
+      setToast('Bid submitted! You\'ll appear on the customer\'s shortlist once reviewed.');
       setJobs(prev => prev.filter(j => j.id !== selectedJob.id));
       setSelectedJob(null);
       setProposalMode(null);
-      setTimeout(() => setToast(''), 5000);
+      setTimeout(() => setToast(''), 6000);
     } catch (e: any) {
       setError(e.message ?? 'Failed to submit. Please try again.');
     } finally { setSubmitting(false); }

@@ -24,6 +24,13 @@ export class ProposalsController {
     return this.proposalsService.findOne(id);
   }
 
+  // Expert: self-submit a bid from the job board
+  @UseGuards(ClerkAuthGuard)
+  @Post('self-submit')
+  selfSubmit(@Req() req: any, @Body() body: any) {
+    return this.proposalsService.selfSubmit(body.taskId, req.clerkUserId, body);
+  }
+
   // Admin: invite expert to task
   @Post()
   invite(@Body() body: { taskId: string; expertId: string; note?: string }) {
