@@ -44,13 +44,11 @@ export class ExperiencesService {
   }
 
   async cleanupStale() {
-    // Delete tasks with no experience link (orphaned) plus
-    // experiences in unconfirmed/test states (cascades to their tasks).
     const orphanedTasks = await prisma.task.deleteMany({
       where: { experienceId: null },
     });
 
-    const staleIds = await prisma.experience.findMany({
+    const staleExps = await prisma.experience.findMany({
       where: {
         OR: [
           { status: 'intake' as any },
@@ -62,9 +60,11 @@ export class ExperiencesService {
       select: { id: true },
     });
 
-    const deleted = await prisma.experience.deleteMany({
-      where: { id: { in: staleIds.map(e => e.id) } },
-    });
+    const staleIds = staleExps.map(e => e.id);
+
+    // Delete tasks first (no DB-level cascade yet), then experiences
+    await prisma.task.deleteMany({ where: { experienceId: { in: staleIds } } });
+    const deleted = await prisma.experience.deleteMany({ where: { id: { in: staleIds } } });
 
     return {
       orphanedTasksDeleted: orphanedTasks.count,
@@ -79,6 +79,8 @@ export class ExperiencesService {
     });
     if (!exp) throw new Error('Not found');
     if (exp.lead?.clerkUserId !== clerkUserId) throw new Error('Forbidden');
+    // Explicitly delete tasks before experience (no DB-level cascade on this FK)
+    await prisma.task.deleteMany({ where: { experienceId: id } });
     return prisma.experience.delete({ where: { id } });
   }
 }
