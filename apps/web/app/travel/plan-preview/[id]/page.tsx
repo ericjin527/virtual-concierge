@@ -28,7 +28,9 @@ interface Experience {
   budget?: string;
   intakeMode?: string;
   planDraft?: Plan;
+  aiBrief?: Plan;
   lead?: { name?: string };
+  tasks?: { id: string; glamCategory?: string; category: string; status: string; intakeBrief: { title?: string; day?: string; time?: string }; expert?: { name: string; photoUrl?: string } }[];
 }
 
 interface ChatMessage { role: 'user' | 'assistant'; content: string }
@@ -84,23 +86,22 @@ export default function PlanPreviewPage() {
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState('');
 
-  // Poll until plan_ready
+  // Poll until plan is available
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
     async function poll() {
       try {
         const exp = await api.getExperience(id) as Experience;
         setExperience(exp);
-        if (exp.status === 'plan_ready' && exp.planDraft) {
-          setPlan(exp.planDraft);
-          setLoadingPlan(false);
-          clearInterval(interval);
-        } else if (exp.status !== 'intake') {
-          setLoadingPlan(false);
-          clearInterval(interval);
-        }
+        if (exp.status === 'intake') return; // still generating, keep polling
+        // For all other statuses, use planDraft or aiBrief (both should be set)
+        const loadedPlan = exp.planDraft ?? (exp.aiBrief && Object.keys(exp.aiBrief).length ? exp.aiBrief : null);
+        if (loadedPlan) setPlan(loadedPlan);
+        setLoadingPlan(false);
+        clearInterval(interval);
       } catch {
         setLoadingPlan(false);
+        clearInterval(interval);
       }
     }
     poll();
@@ -152,6 +153,7 @@ export default function PlanPreviewPage() {
 
   const days = plan ? getDaysFromPlan(plan) : [];
   const totalTasks = plan?.tasks?.length ?? 0;
+  const isConfirmed = experience ? !['intake', 'plan_ready'].includes(experience.status) : false;
 
   return (
     <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', color: '#111', minHeight: '100vh', background: '#f3f4f6' }}>
@@ -176,18 +178,24 @@ export default function PlanPreviewPage() {
               {totalTasks} task{totalTasks !== 1 ? 's' : ''} · {days.length} day{days.length !== 1 ? 's' : ''}
             </span>
           )}
-          <button
-            onClick={confirmPlan}
-            disabled={confirming || loadingPlan || !plan}
-            style={{
-              background: '#111', color: '#fff', border: 'none', borderRadius: 7,
-              padding: '0.45rem 1rem', fontWeight: 700, fontSize: '0.88rem',
-              cursor: confirming || loadingPlan || !plan ? 'not-allowed' : 'pointer',
-              opacity: confirming || loadingPlan || !plan ? 0.5 : 1,
-            }}
-          >
-            {confirming ? 'Confirming...' : 'Confirm plan →'}
-          </button>
+          {isConfirmed ? (
+            <a href="/portal" style={{ fontSize: '0.85rem', color: '#6b7280', textDecoration: 'none', fontWeight: 600 }}>
+              ← My trips
+            </a>
+          ) : (
+            <button
+              onClick={confirmPlan}
+              disabled={confirming || loadingPlan || !plan}
+              style={{
+                background: '#111', color: '#fff', border: 'none', borderRadius: 7,
+                padding: '0.45rem 1rem', fontWeight: 700, fontSize: '0.88rem',
+                cursor: confirming || loadingPlan || !plan ? 'not-allowed' : 'pointer',
+                opacity: confirming || loadingPlan || !plan ? 0.5 : 1,
+              }}
+            >
+              {confirming ? 'Confirming...' : 'Confirm plan →'}
+            </button>
+          )}
         </div>
       </nav>
 
@@ -276,14 +284,16 @@ export default function PlanPreviewPage() {
                             <span style={{ flexShrink: 0, background: '#f3f4f6', padding: '1px 7px', borderRadius: 99, fontSize: '0.7rem', color: '#6b7280', fontWeight: 600 }}>
                               {CATEGORY_LABELS[task.category] ?? task.category}
                             </span>
-                            <button
-                              className="remove-btn"
-                              onClick={() => removeTask(task)}
-                              title="Remove this task"
-                              style={{ flexShrink: 0, width: 24, height: 24, borderRadius: 99, border: '1px solid #e5e7eb', background: '#fff', color: '#9ca3af', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', padding: 0 }}
-                            >
-                              ✕
-                            </button>
+                            {!isConfirmed && (
+                              <button
+                                className="remove-btn"
+                                onClick={() => removeTask(task)}
+                                title="Remove this task"
+                                style={{ flexShrink: 0, width: 24, height: 24, borderRadius: 99, border: '1px solid #e5e7eb', background: '#fff', color: '#9ca3af', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', padding: 0 }}
+                              >
+                                ✕
+                              </button>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -293,90 +303,105 @@ export default function PlanPreviewPage() {
               })}
             </div>
 
-            <div style={{ marginTop: '1.25rem', padding: '1rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, textAlign: 'center' }}>
-              <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '0.75rem' }}>
-                Happy with your plan? Confirming sends these tasks to our local glam + photography team.
-              </div>
-              <button
-                onClick={confirmPlan}
-                disabled={confirming || !plan}
-                style={{ background: '#111', color: '#fff', border: 'none', borderRadius: 8, padding: '0.75rem 2rem', fontWeight: 700, fontSize: '0.95rem', cursor: confirming ? 'not-allowed' : 'pointer', opacity: confirming ? 0.6 : 1 }}
-              >
-                {confirming ? 'Confirming...' : 'Confirm this plan →'}
-              </button>
-              <div style={{ marginTop: '0.6rem' }}>
-                <a href="/travel" style={{ fontSize: '0.8rem', color: '#9ca3af', textDecoration: 'none' }}>Start over</a>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Right: Chat ── */}
-          <div className="chat-panel">
-            <div style={{ padding: '0.85rem 1rem', borderBottom: '1px solid #f3f4f6', fontWeight: 700, fontSize: '0.88rem', flexShrink: 0 }}>
-              ✏️ Modify your plan
-            </div>
-
-            {/* Messages */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {messages.map((m, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
-                  <div style={{
-                    maxWidth: '85%', padding: '0.6rem 0.85rem',
-                    borderRadius: m.role === 'user' ? '14px 14px 3px 14px' : '14px 14px 14px 3px',
-                    background: m.role === 'user' ? '#111' : '#f3f4f6',
-                    color: m.role === 'user' ? '#fff' : '#111',
-                    fontSize: '0.85rem', lineHeight: 1.55, whiteSpace: 'pre-wrap',
-                  }}>
-                    {m.content}
-                  </div>
+            {isConfirmed ? (
+              <div style={{ marginTop: '1.25rem', padding: '1rem 1.25rem', background: '#d1fae5', border: '1px solid #6ee7b7', borderRadius: 10, textAlign: 'center' }}>
+                <div style={{ fontSize: '1.25rem', marginBottom: '0.4rem' }}>✓</div>
+                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#065f46', marginBottom: '0.25rem' }}>Plan confirmed</div>
+                <div style={{ fontSize: '0.84rem', color: '#047857', lineHeight: 1.5 }}>
+                  We're coordinating your experts. You'll hear from us soon with details.
                 </div>
-              ))}
-              {chatLoading && (
-                <div style={{ display: 'flex' }}>
-                  <div style={{ padding: '0.6rem 0.85rem', background: '#f3f4f6', borderRadius: '14px 14px 14px 3px', color: '#9ca3af', fontSize: '0.85rem' }}>···</div>
+                <a href="/portal" style={{ display: 'inline-block', marginTop: '0.75rem', fontSize: '0.82rem', color: '#065f46', fontWeight: 600, textDecoration: 'none' }}>
+                  ← Back to my trips
+                </a>
+              </div>
+            ) : (
+              <div style={{ marginTop: '1.25rem', padding: '1rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, textAlign: 'center' }}>
+                <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '0.75rem' }}>
+                  Happy with your plan? Confirming sends these tasks to our local glam + photography team.
                 </div>
-              )}
-              <div ref={chatBottomRef} />
-            </div>
-
-            {/* Suggestion chips */}
-            <div style={{ padding: '0.5rem 0.75rem', borderTop: '1px solid #f3f4f6', display: 'flex', gap: '0.4rem', flexWrap: 'wrap', flexShrink: 0 }}>
-              {['Add a video reel task', 'Switch to soft glam makeup', 'Move shoot to golden hour'].map(chip => (
-                <button key={chip} onClick={() => { setChatInput(chip); }} style={{
-                  padding: '3px 10px', borderRadius: 99, border: '1px solid #e5e7eb',
-                  background: '#f9fafb', fontSize: '0.75rem', color: '#374151', cursor: 'pointer',
-                }}>
-                  {chip}
+                <button
+                  onClick={confirmPlan}
+                  disabled={confirming || !plan}
+                  style={{ background: '#111', color: '#fff', border: 'none', borderRadius: 8, padding: '0.75rem 2rem', fontWeight: 700, fontSize: '0.95rem', cursor: confirming ? 'not-allowed' : 'pointer', opacity: confirming ? 0.6 : 1 }}
+                >
+                  {confirming ? 'Confirming...' : 'Confirm this plan →'}
                 </button>
-              ))}
-            </div>
-
-            {/* Input */}
-            <div style={{ padding: '0.75rem', borderTop: '1px solid #f3f4f6', display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
-              <input
-                value={chatInput}
-                onChange={e => setChatInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }}
-                placeholder="e.g. Add a kimono rental on day 2..."
-                disabled={chatLoading}
-                style={{
-                  flex: 1, padding: '0.55rem 0.75rem', border: '1px solid #e5e7eb',
-                  borderRadius: 8, fontSize: '0.85rem', outline: 'none', background: '#fafafa',
-                }}
-              />
-              <button
-                onClick={sendChat}
-                disabled={!chatInput.trim() || chatLoading}
-                style={{
-                  padding: '0.55rem 0.9rem', background: '#111', color: '#fff', border: 'none',
-                  borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem',
-                  opacity: !chatInput.trim() || chatLoading ? 0.4 : 1,
-                }}
-              >
-                →
-              </button>
-            </div>
+                <div style={{ marginTop: '0.6rem' }}>
+                  <a href="/travel" style={{ fontSize: '0.8rem', color: '#9ca3af', textDecoration: 'none' }}>Start over</a>
+                </div>
+              </div>
+            )}
           </div>
+
+          {/* ── Right: Chat (hidden once confirmed) ── */}
+          {!isConfirmed && (
+            <div className="chat-panel">
+              <div style={{ padding: '0.85rem 1rem', borderBottom: '1px solid #f3f4f6', fontWeight: 700, fontSize: '0.88rem', flexShrink: 0 }}>
+                ✏️ Modify your plan
+              </div>
+
+              {/* Messages */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {messages.map((m, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                    <div style={{
+                      maxWidth: '85%', padding: '0.6rem 0.85rem',
+                      borderRadius: m.role === 'user' ? '14px 14px 3px 14px' : '14px 14px 14px 3px',
+                      background: m.role === 'user' ? '#111' : '#f3f4f6',
+                      color: m.role === 'user' ? '#fff' : '#111',
+                      fontSize: '0.85rem', lineHeight: 1.55, whiteSpace: 'pre-wrap',
+                    }}>
+                      {m.content}
+                    </div>
+                  </div>
+                ))}
+                {chatLoading && (
+                  <div style={{ display: 'flex' }}>
+                    <div style={{ padding: '0.6rem 0.85rem', background: '#f3f4f6', borderRadius: '14px 14px 14px 3px', color: '#9ca3af', fontSize: '0.85rem' }}>···</div>
+                  </div>
+                )}
+                <div ref={chatBottomRef} />
+              </div>
+
+              {/* Suggestion chips */}
+              <div style={{ padding: '0.5rem 0.75rem', borderTop: '1px solid #f3f4f6', display: 'flex', gap: '0.4rem', flexWrap: 'wrap', flexShrink: 0 }}>
+                {['Add a video reel task', 'Switch to soft glam makeup', 'Move shoot to golden hour'].map(chip => (
+                  <button key={chip} onClick={() => { setChatInput(chip); }} style={{
+                    padding: '3px 10px', borderRadius: 99, border: '1px solid #e5e7eb',
+                    background: '#f9fafb', fontSize: '0.75rem', color: '#374151', cursor: 'pointer',
+                  }}>
+                    {chip}
+                  </button>
+                ))}
+              </div>
+
+              {/* Input */}
+              <div style={{ padding: '0.75rem', borderTop: '1px solid #f3f4f6', display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                <input
+                  value={chatInput}
+                  onChange={e => setChatInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }}
+                  placeholder="e.g. Add a kimono rental on day 2..."
+                  disabled={chatLoading}
+                  style={{
+                    flex: 1, padding: '0.55rem 0.75rem', border: '1px solid #e5e7eb',
+                    borderRadius: 8, fontSize: '0.85rem', outline: 'none', background: '#fafafa',
+                  }}
+                />
+                <button
+                  onClick={sendChat}
+                  disabled={!chatInput.trim() || chatLoading}
+                  style={{
+                    padding: '0.55rem 0.9rem', background: '#111', color: '#fff', border: 'none',
+                    borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem',
+                    opacity: !chatInput.trim() || chatLoading ? 0.4 : 1,
+                  }}
+                >
+                  →
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
