@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useExpertApi } from '../../../lib/expert-api';
 
-interface Expert { id: string; name: string; status: string; rating?: number; completedJobs: number; categories: string[]; cities: string[]; isAvailable: boolean }
+interface Expert { id: string; name: string; status: string; rating?: number; completedJobs: number; categories: string[]; cities: string[]; isAvailable: boolean; glamCategory?: string }
 interface Task { id: string; category: string; status: string; intakeBrief: { title?: string; day?: string; time?: string }; experience?: { city?: string } }
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -49,7 +49,13 @@ export default function ExpertDashboard() {
         <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
           <a href="/expert/jobs" style={{ fontSize: '0.88rem', color: '#374151', textDecoration: 'none', fontWeight: 600 }}>Browse Jobs</a>
           <a href="/expert/my-tasks" style={{ fontSize: '0.88rem', color: '#374151', textDecoration: 'none', fontWeight: 600 }}>My Tasks</a>
-          <a href="/expert/onboarding" style={{ fontSize: '0.88rem', color: '#6b7280', textDecoration: 'none' }}>Profile</a>
+          <a href="/expert/onboarding" style={{ fontSize: '0.88rem', color: '#6b7280', textDecoration: 'none' }}>Edit Profile</a>
+          {expert?.id && (
+            <a href={`/experts/${expert.id}`} target="_blank" rel="noopener noreferrer"
+              style={{ fontSize: '0.88rem', color: '#6b7280', textDecoration: 'none' }}>
+              View Profile
+            </a>
+          )}
         </div>
       </nav>
 

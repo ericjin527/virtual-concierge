@@ -1,6 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
 import { useExpertApi } from '../../../lib/expert-api';
 
 const A = '#1a1714';
@@ -50,9 +51,13 @@ const STEPS = ['Identity', 'Specialty', 'Coverage', 'Portfolio', 'Rates'];
 
 export default function ExpertOnboardingPage() {
   const router = useRouter();
+  const { isLoaded } = useAuth();
   const expertApi = useExpertApi();
 
   const [step, setStep] = useState(1);
+  const [isExisting, setIsExisting] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [expertId, setExpertId] = useState<string | undefined>();
   const [form, setForm] = useState({
     name: '', phone: '', bio: '', instagramHandle: '', littleRedBookHandle: '', websiteUrl: '',
     glamCategory: '',
@@ -65,6 +70,37 @@ export default function ExpertOnboardingPage() {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    expertApi.getMyProfile().then((profile: any) => {
+      if (!profile) { setProfileLoading(false); return; }
+      setIsExisting(true);
+      setExpertId(profile.id);
+      const meta = profile.metadata ?? {};
+      const portfolioUrls = (meta.portfolioUrls as string[] | undefined) ?? [];
+      const galleryPhotos = (meta.galleryPhotos as string[] | undefined) ?? [];
+      setForm({
+        name: profile.name ?? '',
+        phone: profile.phone ?? '',
+        bio: profile.bio ?? '',
+        instagramHandle: meta.instagramHandle ?? '',
+        littleRedBookHandle: meta.littleRedBookHandle ?? '',
+        websiteUrl: meta.websiteUrl ?? '',
+        glamCategory: profile.glamCategory ?? '',
+        styleTags: (meta.styleTags as string[] | undefined) ?? [],
+        areas: profile.cities ?? [],
+        languages: profile.languages?.length ? profile.languages : ['en'],
+        rateMin: meta.rateMin ? String(meta.rateMin) : '',
+        rateMax: meta.rateMax ? String(meta.rateMax) : '',
+        rateCurrency: meta.rateCurrency ?? 'JPY',
+        rateNotes: meta.rateNotes ?? '',
+        portfolioUrls: portfolioUrls.length >= 3 ? portfolioUrls : [...portfolioUrls, '', '', ''].slice(0, 3),
+        galleryPhotos: galleryPhotos.length >= 3 ? galleryPhotos : [...galleryPhotos, '', '', ''].slice(0, 3),
+      });
+      setProfileLoading(false);
+    }).catch(() => setProfileLoading(false));
+  }, [isLoaded]);
 
   function setField<K extends keyof typeof form>(key: K, value: typeof form[K]) {
     setForm(f => ({ ...f, [key]: value }));
@@ -152,13 +188,27 @@ export default function ExpertOnboardingPage() {
 
   const availableTags = STYLE_TAGS_BY_CATEGORY[form.glamCategory] ?? [];
 
+  if (!isLoaded || profileLoading) return (
+    <div style={{ fontFamily: 'system-ui, sans-serif', padding: '3rem', textAlign: 'center', color: MUTED }}>Loading…</div>
+  );
+
   return (
     <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', color: A, minHeight: '100vh', background: '#faf9f6' }}>
       <nav style={{ borderBottom: `1px solid ${BORDER}`, padding: '1rem 2.5rem', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <a href="/" style={{ fontWeight: 800, fontSize: '1.05rem', textDecoration: 'none', color: A, fontFamily: 'Georgia, serif' }}>
-          Local Butler
-        </a>
-        <span style={{ fontSize: '0.82rem', color: FAINT }}>Expert setup — {step} of {STEPS.length}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+          <a href="/expert/dashboard" style={{ fontWeight: 800, fontSize: '1.05rem', textDecoration: 'none', color: A, fontFamily: 'Georgia, serif' }}>
+            Local Butler
+          </a>
+          {isExisting && expertId && (
+            <a href={`/experts/${expertId}`} target="_blank" rel="noopener noreferrer"
+              style={{ fontSize: '0.8rem', color: MUTED, textDecoration: 'none' }}>
+              View public profile →
+            </a>
+          )}
+        </div>
+        <span style={{ fontSize: '0.82rem', color: FAINT }}>
+          {isExisting ? 'Edit profile' : 'Expert setup'} — {step} of {STEPS.length}
+        </span>
       </nav>
 
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '3rem 1.5rem' }}>
@@ -395,11 +445,11 @@ export default function ExpertOnboardingPage() {
               flex: 2, padding: '0.85rem', background: A, color: '#fff',
               border: 'none', borderRadius: 9, fontWeight: 700, fontSize: '0.9rem',
               cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1,
-            }}>{saving ? 'Saving...' : 'Submit profile →'}</button>
+            }}>{saving ? 'Saving...' : isExisting ? 'Save changes →' : 'Submit profile →'}</button>
           )}
         </div>
 
-        {step === 5 && (
+        {step === 5 && !isExisting && (
           <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.78rem', color: FAINT }}>
             Your profile goes to admin review. You'll be notified within 48 hours.
           </p>
