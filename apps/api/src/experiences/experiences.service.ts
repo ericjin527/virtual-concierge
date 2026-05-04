@@ -44,30 +44,31 @@ export class ExperiencesService {
   }
 
   async cleanupStale() {
-    // Delete experiences (cascades to tasks) where:
-    // - status is still 'intake' or 'plan_ready' (never confirmed), OR
-    // - city is a test city (Tampa, hawaii)
-    // Keeps in_coordination / confirmed / completed real trips.
-    const staleExperiences = await prisma.experience.findMany({
-      where: {
-        OR: [
-          { status: { in: ['intake', 'plan_ready'] as any[] } },
-          { city: { in: ['tampa', 'Tampa', 'hawaii', 'Hawaii'] } },
-        ],
-      },
-      select: { id: true, city: true, status: true, _count: { select: { tasks: true } } },
+    // Delete tasks with no experience link (orphaned) plus
+    // experiences in unconfirmed/test states (cascades to their tasks).
+    const orphanedTasks = await prisma.task.deleteMany({
+      where: { experienceId: null },
     });
 
-    if (staleExperiences.length === 0) return { deleted: { experiences: 0, tasks: 0 } };
+    const staleIds = await prisma.experience.findMany({
+      where: {
+        OR: [
+          { status: 'intake' as any },
+          { status: 'plan_ready' as any },
+          { city: 'tampa' }, { city: 'Tampa' },
+          { city: 'hawaii' }, { city: 'Hawaii' },
+        ],
+      },
+      select: { id: true },
+    });
 
-    const ids = staleExperiences.map(e => e.id);
-    const taskCount = staleExperiences.reduce((s, e) => s + e._count.tasks, 0);
-
-    await prisma.experience.deleteMany({ where: { id: { in: ids } } });
+    const deleted = await prisma.experience.deleteMany({
+      where: { id: { in: staleIds.map(e => e.id) } },
+    });
 
     return {
-      deleted: { experiences: ids.length, tasks: taskCount },
-      summary: staleExperiences.map(e => ({ id: e.id, city: e.city, status: e.status, tasks: e._count.tasks })),
+      orphanedTasksDeleted: orphanedTasks.count,
+      staleExperiencesDeleted: deleted.count,
     };
   }
 
