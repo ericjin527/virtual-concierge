@@ -54,13 +54,14 @@ export default function ExpertOnboardingPage() {
 
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
-    name: '', phone: '', bio: '', instagramHandle: '', websiteUrl: '',
+    name: '', phone: '', bio: '', instagramHandle: '', littleRedBookHandle: '', websiteUrl: '',
     glamCategory: '',
     styleTags: [] as string[],
     areas: [] as string[],
     languages: ['en'] as string[],
     rateMin: '', rateMax: '', rateCurrency: 'JPY', rateNotes: '',
     portfolioUrls: ['', '', ''],
+    galleryPhotos: ['', '', ''] as string[],
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -122,9 +123,19 @@ export default function ExpertOnboardingPage() {
         cities: form.areas,
         metadata: {
           instagramHandle: form.instagramHandle.trim() || undefined,
+          instagramUrl: form.instagramHandle.trim()
+            ? `https://instagram.com/${form.instagramHandle.trim().replace(/^@/, '')}`
+            : undefined,
+          littleRedBookHandle: form.littleRedBookHandle.trim() || undefined,
+          littleRedBookUrl: form.littleRedBookHandle.trim()
+            ? (form.littleRedBookHandle.trim().startsWith('http')
+              ? form.littleRedBookHandle.trim()
+              : `https://www.xiaohongshu.com/user/profile/${form.littleRedBookHandle.trim().replace(/^@/, '')}`)
+            : undefined,
           websiteUrl: form.websiteUrl.trim() || undefined,
           styleTags: form.styleTags,
           portfolioUrls: form.portfolioUrls.filter(u => u.trim()),
+          galleryPhotos: form.galleryPhotos.filter(u => u.trim()),
           rateMin: Number(form.rateMin),
           rateMax: form.rateMax ? Number(form.rateMax) : undefined,
           rateCurrency: form.rateCurrency,
@@ -196,9 +207,13 @@ export default function ExpertOnboardingPage() {
                   <input style={inputStyle} value={form.instagramHandle} onChange={e => setField('instagramHandle', e.target.value)} placeholder="@yourhandle" />
                 </div>
                 <div>
-                  <label style={labelStyle}>Website</label>
-                  <input style={inputStyle} value={form.websiteUrl} onChange={e => setField('websiteUrl', e.target.value)} placeholder="https://..." />
+                  <label style={labelStyle}>Little Red Book 小红书</label>
+                  <input style={inputStyle} value={form.littleRedBookHandle} onChange={e => setField('littleRedBookHandle', e.target.value)} placeholder="@yourhandle or profile URL" />
                 </div>
+              </div>
+              <div>
+                <label style={labelStyle}>Website</label>
+                <input style={inputStyle} value={form.websiteUrl} onChange={e => setField('websiteUrl', e.target.value)} placeholder="https://..." />
               </div>
               <div>
                 <label style={labelStyle}>Languages</label>
@@ -291,7 +306,7 @@ export default function ExpertOnboardingPage() {
             <>
               <div>
                 <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: A, fontFamily: 'Georgia, serif', margin: '0 0 0.25rem' }}>Show your work</h2>
-                <p style={{ color: MUTED, fontSize: '0.85rem', margin: 0 }}>Add links to your best work. One great frame tells more than ten generic ones.</p>
+                <p style={{ color: MUTED, fontSize: '0.85rem', margin: 0 }}>Add links to your portfolio and direct image URLs for your gallery.</p>
               </div>
               {form.portfolioUrls.map((url, i) => (
                 <div key={i}>
@@ -303,8 +318,30 @@ export default function ExpertOnboardingPage() {
                   }} placeholder="Instagram post, Pixieset gallery, Google Drive, or portfolio URL" />
                 </div>
               ))}
+
+              <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: '1rem' }}>
+                <label style={labelStyle}>Gallery photos — direct image URLs shown on your profile</label>
+                {form.galleryPhotos.map((url, i) => (
+                  <div key={i} style={{ marginBottom: '0.5rem' }}>
+                    <input
+                      style={inputStyle}
+                      value={url}
+                      onChange={e => {
+                        const arr = [...form.galleryPhotos];
+                        arr[i] = e.target.value;
+                        setField('galleryPhotos', arr);
+                      }}
+                      placeholder={`https://... (direct .jpg / .png URL)`}
+                    />
+                  </div>
+                ))}
+                <button type="button" onClick={() => setField('galleryPhotos', [...form.galleryPhotos, ''])} style={{
+                  fontSize: '0.8rem', color: MUTED, background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                }}>+ Add another photo URL</button>
+              </div>
+
               <p style={{ fontSize: '0.78rem', color: FAINT, margin: 0 }}>
-                Links should be publicly accessible. You can add more after approval.
+                All links must be publicly accessible. Gallery photos appear in your profile carousel.
               </p>
             </>
           )}

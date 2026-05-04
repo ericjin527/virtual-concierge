@@ -6,7 +6,15 @@ export class ProposalsService {
   listByTask(taskId: string) {
     return prisma.expertProposal.findMany({
       where: { taskId },
-      include: { expert: { select: { id: true, name: true, glamCategory: true, photoUrl: true, rating: true, metadata: true } } },
+      include: {
+        expert: {
+          select: {
+            id: true, name: true, glamCategory: true, photoUrl: true,
+            rating: true, completedJobs: true, bio: true, metadata: true,
+            _count: { select: { reviews: true } },
+          },
+        },
+      },
       orderBy: { createdAt: 'asc' },
     });
   }
@@ -81,6 +89,30 @@ export class ProposalsService {
     await prisma.expertProposal.update({ where: { id }, data: { status: 'selected' } });
 
     // Assign expert to task
+    return prisma.task.update({
+      where: { id: proposal.taskId },
+      data: { expertId: proposal.expertId, status: 'accepted' },
+    });
+  }
+
+  // Customer: select a proposal (verifies task ownership via lead.clerkUserId)
+  async customerSelect(id: string, clerkUserId: string) {
+    const proposal = await this.findOne(id);
+    if (proposal.status !== 'accepted') throw new ForbiddenException('Can only select an accepted proposal');
+
+    const task = await prisma.task.findUnique({
+      where: { id: proposal.taskId },
+      include: { lead: { select: { clerkUserId: true } } },
+    });
+    if (!task?.lead?.clerkUserId || task.lead.clerkUserId !== clerkUserId) {
+      throw new ForbiddenException('Not authorized to select on this task');
+    }
+
+    await prisma.expertProposal.updateMany({
+      where: { taskId: proposal.taskId, id: { not: id } },
+      data: { status: 'rejected' },
+    });
+    await prisma.expertProposal.update({ where: { id }, data: { status: 'selected' } });
     return prisma.task.update({
       where: { id: proposal.taskId },
       data: { expertId: proposal.expertId, status: 'accepted' },

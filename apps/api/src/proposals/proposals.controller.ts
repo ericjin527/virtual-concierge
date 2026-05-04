@@ -44,6 +44,13 @@ export class ProposalsController {
     return this.proposalsService.decline(id, req.clerkUserId, body.note);
   }
 
+  // Customer: select proposal (verifies ownership)
+  @UseGuards(ClerkAuthGuard)
+  @Post(':id/customer-select')
+  customerSelect(@Param('id') id: string, @Req() req: any) {
+    return this.proposalsService.customerSelect(id, req.clerkUserId);
+  }
+
   // Admin: select proposal
   @Post(':id/select')
   select(@Param('id') id: string) {

@@ -1,8 +1,12 @@
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3002';
 
-async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+async function apiFetch<T>(path: string, init?: RequestInit, token?: string): Promise<T> {
   const res = await fetch(`${API}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init?.headers,
+    },
     ...init,
   });
   if (!res.ok) {
@@ -89,6 +93,11 @@ export const api = {
   submitVendorApplication: (data: unknown) => apiFetch('/vendor-applications', { method: 'POST', body: JSON.stringify(data) }),
   approveVendorApplication: (id: string) => apiFetch(`/vendor-applications/${id}/approve`, { method: 'POST' }),
   rejectVendorApplication: (id: string) => apiFetch(`/vendor-applications/${id}/reject`, { method: 'POST' }),
+
+  // Proposals (customer-facing)
+  getProposalsForTask: (taskId: string) => apiFetch(`/proposals?taskId=${taskId}`),
+  customerSelectProposal: (proposalId: string, token: string) =>
+    apiFetch(`/proposals/${proposalId}/customer-select`, { method: 'POST', body: '{}' }, token),
 
   // Butler Network — Tasks
   getTasks: (status?: string, category?: string) => apiFetch(`/tasks${status ? `?status=${status}` : ''}${category ? `&category=${category}` : ''}`),
