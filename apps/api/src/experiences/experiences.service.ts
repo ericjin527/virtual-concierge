@@ -43,6 +43,34 @@ export class ExperiencesService {
     });
   }
 
+  async cleanupStale() {
+    // Delete experiences (cascades to tasks) where:
+    // - status is still 'intake' or 'plan_ready' (never confirmed), OR
+    // - city is a test city (Tampa, hawaii)
+    // Keeps in_coordination / confirmed / completed real trips.
+    const staleExperiences = await prisma.experience.findMany({
+      where: {
+        OR: [
+          { status: { in: ['intake', 'plan_ready'] as any[] } },
+          { city: { in: ['tampa', 'Tampa', 'hawaii', 'Hawaii'] } },
+        ],
+      },
+      select: { id: true, city: true, status: true, _count: { select: { tasks: true } } },
+    });
+
+    if (staleExperiences.length === 0) return { deleted: { experiences: 0, tasks: 0 } };
+
+    const ids = staleExperiences.map(e => e.id);
+    const taskCount = staleExperiences.reduce((s, e) => s + e._count.tasks, 0);
+
+    await prisma.experience.deleteMany({ where: { id: { in: ids } } });
+
+    return {
+      deleted: { experiences: ids.length, tasks: taskCount },
+      summary: staleExperiences.map(e => ({ id: e.id, city: e.city, status: e.status, tasks: e._count.tasks })),
+    };
+  }
+
   async deleteOwned(id: string, clerkUserId: string) {
     const exp = await prisma.experience.findUnique({
       where: { id },

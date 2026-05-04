@@ -1,10 +1,15 @@
-import { Controller, Get, Patch, Delete, Param, Query, Body, UseGuards, Req, HttpCode } from '@nestjs/common';
+import { Controller, Get, Patch, Delete, Post, Param, Query, Body, UseGuards, Req, HttpCode } from '@nestjs/common';
 import { ExperiencesService } from './experiences.service';
 import { ClerkAuthGuard } from '../guards/clerk-auth.guard';
 
 @Controller('experiences')
 export class ExperiencesController {
   constructor(private readonly service: ExperiencesService) {}
+
+  @Post('admin/cleanup-stale')
+  cleanupStale() {
+    return this.service.cleanupStale();
+  }
 
   @UseGuards(ClerkAuthGuard)
   @Get('mine')
