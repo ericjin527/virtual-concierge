@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Param, Query, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Patch, Delete, Param, Query, Body, UseGuards, Req, HttpCode } from '@nestjs/common';
 import { ExperiencesService } from './experiences.service';
 import { ClerkAuthGuard } from '../guards/clerk-auth.guard';
 
@@ -25,5 +25,12 @@ export class ExperiencesController {
   @Patch(':id/status')
   updateStatus(@Param('id') id: string, @Body() body: { status: string }) {
     return this.service.updateStatus(id, body.status);
+  }
+
+  @UseGuards(ClerkAuthGuard)
+  @Delete(':id')
+  @HttpCode(204)
+  deleteOwned(@Param('id') id: string, @Req() req: any) {
+    return this.service.deleteOwned(id, req.clerkUserId);
   }
 }

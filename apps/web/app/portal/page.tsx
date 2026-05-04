@@ -59,6 +59,18 @@ export default function PortalPage() {
   const activeTrips = trips.filter(t => !['completed', 'cancelled'].includes(t.status));
   const pastTrips = trips.filter(t => ['completed', 'cancelled'].includes(t.status));
 
+  async function handleDelete(id: string) {
+    if (!confirm('Delete this trip? This cannot be undone.')) return;
+    const token = await getToken();
+    if (!token) return;
+    try {
+      await api.deleteExperience(id, token);
+      setTrips(prev => prev.filter(t => t.id !== id));
+    } catch {
+      alert('Could not delete trip. Please try again.');
+    }
+  }
+
   return (
     <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', minHeight: '100vh', background: '#faf9f6', color: A }}>
       <nav style={{ borderBottom: `1px solid ${BORDER}`, padding: '1rem 2.5rem', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -86,7 +98,9 @@ export default function PortalPage() {
               Active
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              {activeTrips.map(t => <TripCard key={t.id} trip={t} />)}
+              {activeTrips.map(t => (
+                <TripCard key={t.id} trip={t} onDelete={id => handleDelete(id)} />
+              ))}
             </div>
           </div>
         )}
@@ -98,7 +112,9 @@ export default function PortalPage() {
               Past
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              {pastTrips.map(t => <TripCard key={t.id} trip={t} />)}
+              {pastTrips.map(t => (
+                <TripCard key={t.id} trip={t} onDelete={id => handleDelete(id)} />
+              ))}
             </div>
           </div>
         )}
@@ -152,41 +168,50 @@ export default function PortalPage() {
   );
 }
 
-function TripCard({ trip }: { trip: Experience }) {
+function TripCard({ trip, onDelete }: { trip: Experience; onDelete: (id: string) => void }) {
   const st = STATUS_CONFIG[trip.status] ?? { label: trip.status, bg: '#f3f4f6', color: MUTED, dot: FAINT };
   const dateRange = trip.startDate && trip.endDate
     ? `${fmt(trip.startDate)} – ${fmt(trip.endDate)}`
     : trip.dates ?? fmt(trip.createdAt);
 
-  const href = trip.status === 'plan_ready' || trip.status === 'in_coordination'
-    ? `/travel/plan-preview/${trip.id}`
-    : `/travel/plan-preview/${trip.id}`;
-
   return (
-    <a href={href} style={{
-      background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 12,
-      padding: '1.1rem 1.4rem', textDecoration: 'none', color: 'inherit',
-      display: 'flex', alignItems: 'center', gap: '1rem',
-    }}>
-      <span style={{ fontSize: '1.5rem', flexShrink: 0 }}>📍</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 700, fontSize: '0.92rem', color: A }}>
-          {trip.city ?? 'Trip'}
-          {trip.occasion ? ` · ${trip.occasion.replace(/_/g, ' ')}` : ''}
+    <div style={{ background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 12, overflow: 'hidden' }}>
+      <a href={`/travel/plan-preview/${trip.id}`} style={{
+        padding: '1.1rem 1.4rem', textDecoration: 'none', color: 'inherit',
+        display: 'flex', alignItems: 'center', gap: '1rem',
+      }}>
+        <span style={{ fontSize: '1.5rem', flexShrink: 0 }}>📍</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: '0.92rem', color: A }}>
+            {trip.city ?? 'Trip'}
+            {trip.occasion ? ` · ${trip.occasion.replace(/_/g, ' ')}` : ''}
+          </div>
+          <div style={{ fontSize: '0.78rem', color: MUTED, marginTop: 2 }}>
+            {dateRange}
+            {trip._count?.tasks ? ` · ${trip._count.tasks} task${trip._count.tasks !== 1 ? 's' : ''}` : ''}
+          </div>
         </div>
-        <div style={{ fontSize: '0.78rem', color: MUTED, marginTop: 2 }}>
-          {dateRange}
-          {trip._count?.tasks ? ` · ${trip._count.tasks} task${trip._count.tasks !== 1 ? 's' : ''}` : ''}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+          <span style={{ background: st.bg, color: st.color, padding: '2px 10px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 600 }}>
+            {st.label}
+          </span>
+          {trip.status === 'plan_ready' && (
+            <span style={{ fontSize: '0.72rem', color: P, fontWeight: 600 }}>View plan →</span>
+          )}
         </div>
+      </a>
+      <div style={{ borderTop: `1px solid ${BORDER}`, padding: '0.5rem 1.4rem', display: 'flex', justifyContent: 'flex-end' }}>
+        <button
+          onClick={() => onDelete(trip.id)}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: '0.78rem', color: '#b91c1c', padding: '2px 0',
+            display: 'flex', alignItems: 'center', gap: '0.3rem',
+          }}
+        >
+          🗑 Delete trip
+        </button>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
-        <span style={{ background: st.bg, color: st.color, padding: '2px 10px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 600 }}>
-          {st.label}
-        </span>
-        {trip.status === 'plan_ready' && (
-          <span style={{ fontSize: '0.72rem', color: P, fontWeight: 600 }}>View plan →</span>
-        )}
-      </div>
-    </a>
+    </div>
   );
 }

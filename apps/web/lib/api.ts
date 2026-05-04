@@ -136,6 +136,8 @@ export const api = {
   // My trips (customer, auth-gated)
   getMyExperiences: (token: string) =>
     apiFetch('/experiences/mine', undefined, token),
+  deleteExperience: (id: string, token: string) =>
+    apiFetch(`/experiences/${id}`, { method: 'DELETE' }, token),
 
   // Experiences
   getExperiences: (status?: string, type?: string) =>

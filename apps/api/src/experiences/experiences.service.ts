@@ -42,4 +42,14 @@ export class ExperiencesService {
       data: { status: status as any },
     });
   }
+
+  async deleteOwned(id: string, clerkUserId: string) {
+    const exp = await prisma.experience.findUnique({
+      where: { id },
+      include: { lead: { select: { clerkUserId: true } } },
+    });
+    if (!exp) throw new Error('Not found');
+    if (exp.lead?.clerkUserId !== clerkUserId) throw new Error('Forbidden');
+    return prisma.experience.delete({ where: { id } });
+  }
 }
