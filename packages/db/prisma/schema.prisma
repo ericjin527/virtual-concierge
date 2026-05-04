@@ -604,7 +604,7 @@ model Task {
 
   lead        Lead?          @relation(fields: [leadId], references: [id])
   expert      Expert?        @relation(fields: [expertId], references: [id])
-  experience  Experience?    @relation(fields: [experienceId], references: [id])
+  experience  Experience?    @relation(fields: [experienceId], references: [id], onDelete: Cascade)
   destination Destination?   @relation(fields: [destinationId], references: [id])
   quotes      TaskQuote[]
   booking     TaskBooking?
