@@ -13,6 +13,7 @@ async function apiFetch<T>(path: string, init?: RequestInit, token?: string): Pr
     const text = await res.text();
     throw new Error(`API ${res.status}: ${text}`);
   }
+  if (res.status === 204) return undefined as unknown as T;
   return res.json() as Promise<T>;
 }
 
